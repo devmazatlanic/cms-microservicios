@@ -1,7 +1,5 @@
 const express = require('express');
 const cors = require('cors');
-// const { connection } = require('../databases/config');
-// const db = new DB();
 
 class Server {
 
@@ -10,17 +8,12 @@ class Server {
         this.port = process.env.PORT;
         // ROUTE PATHS
         this.perfiles_path = '/api/perfiles';
-        // BASE DE DATOS
-        // this.connectdb();
+        this.notificaciones_path = '/api/notificaciones';
         // MIDDLEWARES
         this.middlewares();
         // ROUTES
         this.routes();
     }
-
-    // async connectdb() {
-    //     await connection();
-    // }
 
     middlewares() {
         // CORS
@@ -33,6 +26,7 @@ class Server {
 
     routes() {
         this.app.use(this.perfiles_path, require('../routes/perfiles'));
+        this.app.use(this.notificaciones_path, require('../routes/notificaciones'));
     }
 
     listen() {

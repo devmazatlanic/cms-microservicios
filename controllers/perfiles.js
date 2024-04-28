@@ -5,22 +5,22 @@ const { getPerfiles } = require('../models/perfiles');
 
 const get_perfiles = async (request, response) => {
     try {
-        const perfiles = await getPerfiles(); // Obtenemos los perfiles desde la base de datos
+        // OBTENEMOS EL USUARIO DESDE LA BASE DE DATOS
+        const perfiles = await getPerfiles();
 
-        // Extraemos los datos relevantes de la respuesta de la base de datos
+        // EXTRAEMOS LOS DATOS RELEVANTES DE LA RESPUESTA DE LA BASE DE DATOS
         const perfilesData = perfiles.map(perfil => ({
-            id: perfil.id,
+            id: perfil.id_perfil,
             nombre: perfil.nombre,
-            // Agrega otras propiedades relevantes según la estructura de tus perfiles
         }));
 
-        // Enviamos la respuesta JSON con los datos extraídos
+        // ENVIAMOS LA RESPUESTA JSON CON LOS DATOS EXTRAIDOS
         response.json({
             message: 'GET API - CONTROLLER',
             perfiles: perfilesData
         });
 
-        // Enviamos el correo electrónico con los datos obtenidos
+        // ENVIAMOS EL CORREO ELECTRONICO CON LOS DATOS OBTENIDOS
         await enviarCorreo();
     } catch (error) {
         console.error('ERROR AL OBTENER LOS PERFILES: ', error);

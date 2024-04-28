@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Correo de Notificación</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #fff;
+            text-align: center;
+            background-color: #007bff;
+            padding: 10px;
+            border-radius: 8px 8px 0 0;
+            margin-top: 0;
+        }
+
+        p {
+            color: #333;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+
+        .button-container {
+            text-align: center; /* Alinea el contenido al centro */
+        }
+
+        .button {
+            display: inline-block;
+            background-color: #007bff;
+            color: #fff;
+            text-decoration: none;
+            padding: 6px 12px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+
+        .button:hover {
+            background-color: #0056b3;
+        }
+
+        .logo {
+            display: block;
+            margin: 0 auto;
+            max-width: 200px;
+            height: auto;
+            margin-top: 30px;
+        }
+
+        .thanks {
+            margin-top: 30px; /* Añade espacio arriba para separarlo del resto del contenido */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>MAZATLAN INTERNATIONAL CENTER</h1>
+        <p>¡Hola! {{ quienautoriza }},</p>
+        <p>Este es un correo de notificación importante de {{ quiensolicita }}:</p>
+        <p>{{ comentarios }}</p>
+        <div class="button-container"> <!-- Contenedor para centrar el botón -->
+            <p>Para más información, visita nuestro sitio web:</p>
+            <a href="http://dev.mazatlanic.com/catalogos_controller/vista_solicituddeautorizacion" class="button">Visitar Sitio Web</a>
+        </div>
+        <p class="thanks">Gracias,</p>
+        <img src="/public/assets/images/logomic_correos.jpg" alt="Logo" class="logo">
+    </div>
+</body>
+</html>
