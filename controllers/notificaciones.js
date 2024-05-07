@@ -34,7 +34,7 @@ const post_notificaciones_solicitudcancelacion = async (request, response) => {
             email_quienautoriza: solicitud.email_quienautoriza,
             // ASIGNAMOS LOS DATOS DEL PROCEDIMIENTO ALMACENADO A DATA PARA ENVIAR TODO A LA VISTA Y PREPARAR EL CORREO A ENVIAR
             cotizacion_id: body.cotizacion_id,
-            comentario_id: body.comentario_id,
+            comentario_id: body.tabla_id,
             evento: call_datosgeneralevento[0][0]
         }));
 
