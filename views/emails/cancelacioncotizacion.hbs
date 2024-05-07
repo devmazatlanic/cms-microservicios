@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CANCELACIÓN DE COTIZACIÓN</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+
+        .banner {
+            background-color: #0056b3;
+            color: #ffffff;
+            text-align: center;
+            padding: 10px 0;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+            margin-top: -20px;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            margin-top: 0;
+        }
+
+        p {
+            margin-bottom: 20px;
+        }
+
+        strong {
+            font-weight: bold;
+        }
+
+        a {
+            color: #ffffff;
+            text-decoration: none;
+            font-weight: bold;
+            display: inline-block;
+            background-color: #0056b3;
+            padding: 10px 20px;
+            border-radius: 5px;
+        }
+
+        a:hover {
+            background-color: #004080;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        .logo {
+            display: block;
+            margin: 0 auto;
+            width: 50px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="banner">
+            <h1>NOTIFICACIÓN DE CANCELACIÓN</h1>
+        </div>
+        <p>Se requiere cancelar la cotización con el siguiente folio: {{ cotizacion_id }}</p>
+        <p>
+            <strong>EJECUTIVO:</strong> {{ evento.ejecutivo }}<br>
+            <strong>EVENTO:</strong> {{ evento.evento }}<br>
+            <strong>TIPO DE EVENTO:</strong> {{ evento.tipo_evento }}<br>
+            <strong>FECHA:</strong> {{ evento.fecha_inicio }} - {{ evento.fecha_final }}<br>
+            <strong>CONTACTO:</strong> {{ contacto }}<br>
+            <strong>COMENTARIO POR MOTIVOS DE CANCELACIÓN:</strong><br>
+            {{ comentarios }}
+        </p>
+        
+        <p><a href="http://cms.mazatlanic.com/vt_bibliotecas_controller/ajax_autorizarcotizacioncancelada/{{cotizacion_id}}/{{comentario_id}}/1">Hacer clic para autorizar la cancelación</a></p>
+
+        <div class="footer">
+            <img src="http://cms.mazatlanic.com/assets/images/logomic_correos.png" alt="Logo Mazatlanic" class="logo">
+        </div>
+    </div>
+</body>
+</html>
