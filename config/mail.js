@@ -20,7 +20,7 @@ const enviarCorreo = async (datos) => {
 
         // Objeto de configuración de correo electrónico
         const mailOptions = {
-            from: 'no-reply@mazatlaninternationalcenter.com', // Dirección de correo del remitente
+            from: 'info@mazatlaninternationalcenter.com', // Dirección de correo del remitente
             to: 'janto_sega5@hotmail.com', // Dirección de correo del destinatario
             subject: 'TEST', // Asunto del correo
             html: contenidoHTML // Contenido del correo en texto plano
@@ -42,7 +42,7 @@ const mail_solicitudAutorizacion = async (datos) => {
 
         // Objeto de configuración de correo electrónico
         const mailOptions = {
-            from: 'no-reply@mazatlanic.com', // Dirección de correo del remitente 
+            from: 'info@mazatlanic.com', // Dirección de correo del remitente 
             to: datos.email_quienautoriza, // Dirección de correo del destinatario
             cc: datos.email_quiensolicita + ', sistemas@mazatlanic.com',
             subject: 'NOTIFICACION - SOLICITUD DE AUTORIZACION', // Asunto del correo
@@ -65,9 +65,10 @@ const mail_cancelacionCotizacion = async (datos) => {
 
         // Objeto de configuración de correo electrónico
         const mailOptions = {
-            from: 'no-reply@mazatlanic.com', // Dirección de correo del remitente 
+            from: 'info@mazatlanic.com', // Dirección de correo del remitente 
             to: datos.email_quienautoriza, // Dirección de correo del destinatario
-            cc: datos.email_quiensolicita + ', sistemas@mazatlanic.com',
+            // cc: datos.email_quiensolicita + ', sistemas@mazatlanic.com',
+            cc: 'sistemas@mazatlanic.com',
             subject: `NOTIFICACION - CANCELACION DE LA COTIZACION CON FOLIO ${datos.cotizacion_id} DEL EVENTO ${datos.evento.evento.toUpperCase()}`, // Asunto del correo
             html: contenidoHTML // Contenido del correo en texto plano
         };
