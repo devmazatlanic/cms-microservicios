@@ -1,5 +1,5 @@
 const nodemailer = require('nodemailer');
-const { getLayoutTest, getSolicitudAutorizacion, getCancelacionCotizacion } = require('../config/plantillas');
+const { getLayoutTest, getSolicitudAutorizacion, getCancelacionCotizacion, getReciboIngreso } = require('../config/plantillas');
 
 // Configuración del transporte SMTP
 const transporter = nodemailer.createTransport({
@@ -81,8 +81,33 @@ const mail_cancelacionCotizacion = async (datos) => {
     }
 };
 
+// Función asíncrona para enviar el correo electrónico
+const mail_enviar_recibodeingreso = async (datos) => {
+    try {
+        // Cargar y renderizar la plantilla HTML
+        const contenidoHTML = await getReciboIngreso(datos);
+
+        // Objeto de configuración de correo electrónico
+        const mailOptions = {
+            from: 'info@mazatlanic.com', // Dirección de correo del remitente 
+            to: datos.correos, // Dirección de correo del destinatario
+            // cc: datos.email_quiensolicita + ', sistemas@mazatlanic.com',
+            cc: 'sistemas@mazatlanic.com',
+            subject: `NOTIFICACION - CONTRA RECIBO DE INGRESO POR EL FOLIO ${datos.segmento_negocios}`, // Asunto del correo
+            html: contenidoHTML // Contenido del correo en texto plano
+        };
+
+        // Enviar el correo electrónico
+        const info = await transporter.sendMail(mailOptions);
+        console.log('CORREO ENVIADO:', info.response);
+    } catch (error) {
+        console.error('ERROR AL ENVIAR EL CORREO: ', error);
+    }
+};
+
 module.exports = {
     enviarCorreo,
     mail_solicitudAutorizacion,
-    mail_cancelacionCotizacion
+    mail_cancelacionCotizacion,
+    mail_enviar_recibodeingreso
 };
