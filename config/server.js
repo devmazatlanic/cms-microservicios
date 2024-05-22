@@ -9,6 +9,7 @@ class Server {
         // ROUTE PATHS
         this.perfiles_path = '/api/perfiles';
         this.notificaciones_path = '/api/notificaciones';
+        this.ingresos_path = '/api/ingresos';
         // MIDDLEWARES
         this.middlewares();
         // ROUTES
@@ -27,6 +28,7 @@ class Server {
     routes() {
         this.app.use(this.perfiles_path, require('../routes/perfiles'));
         this.app.use(this.notificaciones_path, require('../routes/notificaciones'));
+        this.app.use(this.ingresos_path, require('../routes/ingresos'));
     }
 
     listen() {
