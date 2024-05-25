@@ -93,7 +93,7 @@ const mail_enviar_recibodeingreso = async (datos) => {
             to: datos.correos, // Dirección de correo del destinatario
             // cc: datos.email_quiensolicita + ', sistemas@mazatlanic.com',
             cc: 'sistemas@mazatlanic.com',
-            subject: `NOTIFICACION - CONTRA RECIBO DE INGRESO POR EL FOLIO ${datos.segmento_negocios}`, // Asunto del correo
+            subject: `NOTIFICACION - CONTRA RECIBO DE INGRESO CON EL FOLIO ${datos.response.id}`, // Asunto del correo
             html: contenidoHTML // Contenido del correo en texto plano
         };
 

@@ -10,30 +10,35 @@
             background-color: #f4f4f4;
             margin: 0;
             padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
         }
 
         .container {
             max-width: 600px;
-            margin: 0 auto;
             background-color: #ffffff;
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            padding: 20px;
+            overflow: hidden;
+            font-size: 14px;
         }
 
         .banner {
             background-color: #0056b3;
             color: #ffffff;
             text-align: center;
-            padding: 10px 0;
-            border-top-left-radius: 8px;
-            border-top-right-radius: 8px;
-            margin-top: -20px;
-            margin-bottom: 20px;
+            padding: 20px;
+        }
+
+        .content {
+            padding: 20px;
         }
 
         h1 {
             margin-top: 0;
+            font-size: 24px;
         }
 
         p {
@@ -44,23 +49,29 @@
             font-weight: bold;
         }
 
-        a {
+        .button-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .button {
             color: #ffffff;
             text-decoration: none;
-            font-weight: bold;
-            display: inline-block;
             background-color: #0056b3;
             padding: 10px 20px;
             border-radius: 5px;
+            font-weight: bold;
+            display: inline-block;
         }
 
-        a:hover {
+        .button:hover {
             background-color: #004080;
         }
 
         .footer {
             text-align: center;
-            margin-top: 30px;
+            padding: 20px;
+            background-color: #f4f4f4;
         }
 
         .logo {
@@ -73,16 +84,21 @@
 <body>
     <div class="container">
         <div class="banner">
-            <h1>CONTRA RECIBO DE INGRESO CON EL SEGMENTO DE NEGOCIO {{ segmento_negocios }}</h1>
+            <h1>CONTRA RECIBO DE INGRESO CON FOLIO {{ response.id }}</h1>
         </div>
-        <p>
-            <strong>SEGMENTO DE NEGOCIO:</strong> {{ segmento_negocios }}<br>
-            <strong>MONTO:</strong> {{ response.ing_Monto }}<br>
-            <strong>FECHA DE PAGO:</strong> {{ response.ing_fechaPago }}<br>
-            <strong>COMENTARIO DEL INGRESO:</strong><br>
-            {{ response.ing_comentario }}
-        </p>
-        
+        <div class="content">
+            <p>
+                <strong>EVENTO:</strong> {{ response.nombre_evento }}<br>
+                <strong>SEGMENTO DE NEGOCIO:</strong> {{ segmento_negocios }}<br>
+                <strong>MONTO: $</strong> {{ response.ing_monto }}<br>
+                <strong>FECHA DE PAGO:</strong> {{ response.fecha_pago }}<br>
+                <strong>REGISTRADO POR:</strong> {{ response.usuario }}<br>
+                <strong>CONCEPTO:</strong> {{ response.concepto }}<br>
+                <strong>MODO DE PAGO:</strong> {{ response.modoPago }}<br>
+                <strong>COMENTARIO DEL INGRESO:</strong><br>
+                {{ response.ing_comentario }}
+            </p>
+        </div>
         <div class="footer">
             <img src="http://cms.mazatlanic.com/assets/images/logomic_correos.png" alt="Logo Mazatlanic" class="logo">
         </div>

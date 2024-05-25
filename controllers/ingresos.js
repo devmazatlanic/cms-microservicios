@@ -6,17 +6,16 @@ const { procesure_getDatosGeneralesEventosById } = require('../models/eventos');
 
 const post_recibo_ingreso = async (request, response) => {
     const body = request.body;
-    console.log('body: ', request.body);
 
     try {
         // ENVIAMOS LA RESPUESTA JSON CON LOS DATOS EXTRAIDOS
         response.json({
             message: 'SE ENVIO EL RECIBO CON EXITO.',
-            response: request.body
+            response: body
         });
 
         // ENVIAMOS EL CORREO ELECTRONICO CON LOS DATOS OBTENIDOS
-        await mail_enviar_recibodeingreso(request.body);
+        await mail_enviar_recibodeingreso(body);
 
     } catch (error) {
         console.error('ERROR AL OBTENER EL RECIBO, VUELVA A INTENTARLO O HABLE CON EL DPTO. DE TI: ', error);
