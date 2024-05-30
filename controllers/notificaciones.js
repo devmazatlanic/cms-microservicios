@@ -1,7 +1,8 @@
 const { request, response } = require('express');
-const { enviarCorreo, mail_solicitudAutorizacion, mail_cancelacionCotizacion } = require('../config/mail');
-const { getUsuario } = require('../models/perfiles');
+const { enviarCorreo, mail_solicitudAutorizacion, mail_cancelacionCotizacion, mail_enviar_reportebancos } = require('../config/mail');
+const { getCorreosByDepartamento } = require('../models/perfiles');
 const { getSolicitudAutorizacion, setSolicitudAutorizacionByNotificacion } = require('../models/autorizaciones');
+const { getReportesBancos } = require('../models/reportes');
 const { procesure_getDatosGeneralesEventosById } = require('../models/eventos');
 
 
@@ -126,8 +127,35 @@ const post_notificaciones = async (request, response) => {
     }
 };
 
+const post_notificaciones_reporte_bancos = async (request, response) => {
+    // const body = request.body;
+    // console.log('body: ', request.body);
+
+
+    try {
+        // OBTENEMOS LOS DATOS DE SOLICITUD DE AUTORIZACION DESDE LA BASE DE DATOS
+        const _reportebancos = await getReportesBancos();
+        const _correos = await getCorreosByDepartamento({ id_departamento: 4 });
+
+        // ENVIAMOS LA RESPUESTA JSON CON LOS DATOS EXTRAIDOS
+        response.json({
+            message: 'SE ENVIO EL REPORTE CON EXITO.'
+        });
+
+        // ENVIAMOS EL CORREO ELECTRONICO CON LOS DATOS OBTENIDOS
+        for (const element of _correos) {
+            await mail_enviar_reportebancos({ correo: element.email, bancos: _reportebancos });
+        }
+
+    } catch (error) {
+        console.error('ERROR AL OBTENER LA SOLICITUD, VUELVA A INTENTARLO O HABLE CON EL DPTO. DE TI: ', error);
+        response.status(500).json({ message: 'ERROR AL OBTENER LA SOLICITUD, VUELVA A INTENTARLO O HABLE CON EL DPTO. DE TI.' });
+    }
+};
+
 module.exports = {
     post_notificaciones_solicitudcancelacion,
     post_notificacion_solicitudautorizacion,
-    post_notificaciones
+    post_notificaciones,
+    post_notificaciones_reporte_bancos
 }

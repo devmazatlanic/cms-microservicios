@@ -56,7 +56,26 @@ const getUsuario = async (_idUsuario) => {
     }
 };
 
+const getCorreosByDepartamento = async (data) => {
+    try {
+        // CONSULTA DE SELECT - TCR_INGRESOSBANCOS
+        const _select = await new Promise((resolve, reject) => {
+            const _sql = `SELECT id_perfil, CONCAT_WS(" ",  nombre, apellido_paterno, apellido_materno) AS empleado, email FROM perfiles WHERE status_alta = 1 AND email <> "" AND id_departamento = ?`;
+
+            connection.query(_sql, [data.id_departamento], (error, results) => {
+                if (error) reject(error);
+                else resolve(results);
+            });
+        });
+
+        return _select;
+    } catch (error) {
+        throw error;
+    }
+};
+
 module.exports = {
     getPerfiles,
-    getUsuario
+    getUsuario,
+    getCorreosByDepartamento
 };

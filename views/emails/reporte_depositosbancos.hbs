@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>REPORTE DE DEPOSITOS BANCARIOS SIN IDENTIFICAR</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1024px; /* Aumenta el ancho máximo del contenedor */
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            font-size: 14px;
+            margin: 20px;
+        }
+
+        .banner {
+            background-color: #0056b3;
+            color: #ffffff;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .content {
+            padding: 20px;
+            overflow-x: auto; /* Añade desplazamiento horizontal en caso de ser necesario */
+        }
+
+        h1 {
+            margin-top: 0;
+            font-size: 24px;
+        }
+
+        p {
+            margin-bottom: 20px;
+        }
+
+        strong {
+            font-weight: bold;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        th, td {
+            border: 1px solid #dddddd;
+            text-align: left;
+            padding: 8px;
+            white-space: nowrap; /* Evita que las celdas se envuelvan */
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        .button-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .button {
+            color: #ffffff;
+            text-decoration: none;
+            background-color: #0056b3;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-weight: bold;
+            display: inline-block;
+        }
+
+        .button:hover {
+            background-color: #004080;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+
+        .logo {
+            display: block;
+            margin: 0 auto;
+            width: 50px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="banner">
+            <h1>REPORTE DE DEPOSITOS BANCARIOS SIN IDENTIFICAR</h1>
+        </div>
+        <div class="content">
+            <table>
+                <thead>
+                    <tr class="text-uppercase">
+                        <th>TIPO</th>
+                        <th>CLASIFICACION</th>
+                        <th>DEPOSITOS</th>
+                        <th>MOVIMIENTOS</th>
+                        <th>FECHA OPERACION</th>
+                        <th>REFERENCIA</th>
+                        <th>DESCRIPCION</th>
+                        <th>DESCRIPCION DETALLADA</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#each bancos}}
+                    <tr>
+                        <td>{{this.tipo}}</td>
+                        <td>{{this.clasif}}</td>
+                        <td>{{this.depositos}}</td>
+                        <td>{{this.movimientos}}</td>
+                        <td>{{this.fecha_operacion}}</td>
+                        <td>{{this.referencia}}</td>
+                        <td>{{this.descripcion}}</td>
+                        <td>{{this.descripcion_detallada}}</td>
+                    </tr>
+                    {{/each}}
+                </tbody>
+                <tfoot>
+                    <tr class="text-uppercase">
+                        <th>TIPO</th>
+                        <th>CLASIFICACION</th>
+                        <th>DEPOSITOS</th>
+                        <th>MOVIMIENTOS</th>
+                        <th>FECHA OPERACION</th>
+                        <th>REFERENCIA</th>
+                        <th>DESCRIPCION</th>
+                        <th>DESCRIPCION DETALLADA</th>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        <div class="footer">
+            <img src="http://cms.mazatlanic.com/assets/images/logomic_correos.png" alt="Logo Mazatlanic" class="logo">
+        </div>
+    </div>
+</body>
+</html>
