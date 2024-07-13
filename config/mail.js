@@ -7,8 +7,8 @@ const transporter = nodemailer.createTransport({
     port: 465, // Puerto SMTP seguro
     secure: true, // true para usar SSL/TLS, false para SMTP no seguro
     auth: {
-        user: 'info@mazatlaninternationalcenter.com', // Correo electrónico del remitente
-        pass: 'zg3GL+U^Rl%x' // Contraseña del correo electrónico del remitente
+        user: 'no-reply@mazatlaninternationalcenter.com', // Correo electrónico del remitente
+        pass: 'wpN;5xrJaY=T' // Contraseña del correo electrónico del remitente
     }
 });
 
@@ -16,14 +16,15 @@ const transporter = nodemailer.createTransport({
 const enviarCorreo = async (datos) => {
     try {
         // Cargar y renderizar la plantilla HTML
-        const contenidoHTML = await getLayoutTest(datos);
+        // const contenidoHTML = await getLayoutTest(datos);
 
         // Objeto de configuración de correo electrónico
         const mailOptions = {
-            from: 'info@mazatlaninternationalcenter.com', // Dirección de correo del remitente
-            to: 'janto_sega5@hotmail.com', // Dirección de correo del destinatario
-            subject: 'TEST', // Asunto del correo
-            html: contenidoHTML // Contenido del correo en texto plano
+            from: 'no-reply@mazatlanic.com', // Dirección de correo del remitente
+            to: datos.to, // Dirección de correo del destinatario
+            subject: 'INFORMATIVO - ' + datos.subject.toUpperCase(), // Asunto del correo
+            // html: contenidoHTML // Contenido del correo en texto plano
+            html: datos.body
         };
 
         // Enviar el correo electrónico

@@ -91,9 +91,7 @@ const post_notificacion_solicitudautorizacion = async (request, response) => {
 
 const post_notificaciones = async (request, response) => {
     const body = request.body;
-    console.log('body: ', request.body);
-
-
+    // console.log('body: ', request.body);
     try {
         // // OBTENEMOS LOS DATOS DE SOLICITUD DE AUTORIZACION DESDE LA BASE DE DATOS
         // const solicitudautorizacion = await getSolicitudAutorizacion(body.id_solicitudautorizacion);
@@ -113,8 +111,10 @@ const post_notificaciones = async (request, response) => {
 
         // ENVIAMOS LA RESPUESTA JSON CON LOS DATOS EXTRAIDOS
         response.json({
-            message: 'SE ENVIO LA SOLICITUD CON EXITO. - notificaciones'
+            message: 'SE ENVIO EL CORREO CON EXITO.'
         });
+
+        await enviarCorreo(body);
 
         // // ENVIAMOS EL CORREO ELECTRONICO CON LOS DATOS OBTENIDOS
         // for (const element of data) {
