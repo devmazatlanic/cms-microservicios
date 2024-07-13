@@ -3,7 +3,7 @@ const { getLayoutTest, getSolicitudAutorizacion, getCancelacionCotizacion, getRe
 
 // Configuración del transporte SMTP
 const transporter = nodemailer.createTransport({
-    host: 'a2plcpnl0405.prod.iad2.secureserver.net', // Nombre del host SMTP
+    host: 'p3plzcpnl506083.prod.phx3.secureserver.net', // Nombre del host SMTP
     port: 465, // Puerto SMTP seguro
     secure: true, // true para usar SSL/TLS, false para SMTP no seguro
     auth: {
