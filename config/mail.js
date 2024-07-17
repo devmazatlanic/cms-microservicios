@@ -23,6 +23,11 @@ const enviarCorreo = async (datos) => {
             from: 'no-reply@mazatlanic.com', // Dirección de correo del remitente
             to: datos.to, // Dirección de correo del destinatario
             subject: 'INFORMATIVO - ' + datos.subject.toUpperCase(), // Asunto del correo
+            attachments: [
+                {
+                    path: datos.attachments
+                }
+            ],
             // html: contenidoHTML // Contenido del correo en texto plano
             html: datos.body
         };
