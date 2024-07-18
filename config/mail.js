@@ -22,6 +22,7 @@ const enviarCorreo = async (datos) => {
         const mailOptions = {
             from: 'no-reply@mazatlanic.com', // Dirección de correo del remitente
             to: datos.to, // Dirección de correo del destinatario
+            cc: (datos.cc != "")?datos.cc:"",
             subject: 'INFORMATIVO - ' + datos.subject.toUpperCase(), // Asunto del correo
             attachments: [
                 {
