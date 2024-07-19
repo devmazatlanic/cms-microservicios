@@ -1,4 +1,7 @@
 const nodemailer = require('nodemailer');
+const path = require('path');
+const fs = require('fs');
+const axios = require('axios');
 const { getLayoutTest, getSolicitudAutorizacion, getCancelacionCotizacion, getReciboIngreso, getReporteBancos } = require('../config/plantillas');
 
 // Configuración del transporte SMTP
@@ -14,32 +17,61 @@ const transporter = nodemailer.createTransport({
 
 // Función asíncrona para enviar el correo electrónico
 const enviarCorreo = async (datos) => {
+    console.log(datos);
     try {
-        // Cargar y renderizar la plantilla HTML
-        // const contenidoHTML = await getLayoutTest(datos);
+        let fileName = "";
+        let tempFilePath = "";
+        if (datos.attachments) {
+            let fileUrl = datos.attachments;
+            fileName = path.basename(fileUrl);
 
-        // Objeto de configuración de correo electrónico
+            // Descarga el archivo con un mayor tiempo de espera
+            const response = await axios.get(fileUrl, {
+                responseType: 'arraybuffer',
+                timeout: 30000 // Establece un timeout de 30 segundos
+            });
+
+            if (response.status !== 200) {
+                throw new Error(`Error al descargar el archivo: ${response.statusText}`);
+            }
+
+            // Guarda el archivo descargado en una ruta temporal
+            tempFilePath = path.join(__dirname, fileName);
+            fs.writeFileSync(tempFilePath, response.data);
+        }
+
+        // Configuración del correo
         const mailOptions = {
-            from: 'no-reply@mazatlanic.com', // Dirección de correo del remitente
-            to: datos.to, // Dirección de correo del destinatario
-            cc: (datos.cc != "")?datos.cc:"",
-            subject: 'INFORMATIVO - ' + datos.subject.toUpperCase(), // Asunto del correo
-            attachments: [
-                {
-                    path: datos.attachments
-                }
-            ],
-            // html: contenidoHTML // Contenido del correo en texto plano
-            html: datos.body
+            from: 'no-reply@mazatlanic.com',
+            to: datos.to,
+            cc: datos.cc || '',
+            subject: 'INFORMATIVO - ' + datos.subject.toUpperCase(),
+            html: datos.body,
+            attachments: datos.attachments ? [{
+                filename: fileName,
+                path: tempFilePath
+            }] : []
         };
 
-        // Enviar el correo electrónico
+        // Enviar el correo
         const info = await transporter.sendMail(mailOptions);
         console.log('CORREO ENVIADO:', info.response);
+
+        // Elimina el archivo temporal después de enviar el correo
+        if (datos.attachments && tempFilePath) {
+            fs.unlink(tempFilePath, (err) => {
+                if (err) {
+                    console.error('Error al eliminar el archivo temporal:', err);
+                } else {
+                    console.log('Archivo temporal eliminado.');
+                }
+            });
+        }
     } catch (error) {
         console.error('ERROR AL ENVIAR EL CORREO: ', error);
     }
 };
+
 
 // Función asíncrona para enviar el correo electrónico
 const mail_solicitudAutorizacion = async (datos) => {
