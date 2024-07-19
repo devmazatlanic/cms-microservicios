@@ -17,7 +17,7 @@ const transporter = nodemailer.createTransport({
 
 // Función asíncrona para enviar el correo electrónico
 const enviarCorreo = async (datos) => {
-    console.log(datos);
+    // console.log(datos);
     try {
         let fileName = "";
         let tempFilePath = "";
