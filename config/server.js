@@ -10,6 +10,7 @@ class Server {
         this.perfiles_path = '/api/perfiles';
         this.notificaciones_path = '/api/notificaciones';
         this.ingresos_path = '/api/ingresos';
+        this.rfid_path = '/api/rfid';
         // MIDDLEWARES
         this.middlewares();
         // ROUTES
@@ -29,6 +30,7 @@ class Server {
         this.app.use(this.perfiles_path, require('../routes/perfiles'));
         this.app.use(this.notificaciones_path, require('../routes/notificaciones'));
         this.app.use(this.ingresos_path, require('../routes/ingresos'));
+        this.app.use(this.rfid_path, require('../routes/rfid'));
     }
 
     listen() {
