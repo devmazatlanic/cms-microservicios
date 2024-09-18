@@ -3,31 +3,49 @@ const { request, response } = require('express');
 const { getUsuario } = require('../models/perfiles');
 
 const post_rfid = async (request, response) => {
-    const body = request.body;
-    console.log('body: ', body);
+    const { uuid } = request.body; // Extracción directa de `uuid`
+    console.log('body:', request.body);
+
+    // Validar si el campo `uuid` existe
+    if (!uuid) {
+        return response.status(400).json({
+            next: false,
+            message: "El UUID es necesario"
+        });
+    }
+
     try {
-        // OBTENEMOS EL USUARIO DESDE LA BASE DE DATOS
-        const perfiles = await getUsuario(body.uuid);
+        // OBTENER EL USUARIO DESDE LA BASE DE DATOS
+        const perfiles = await getUsuario(uuid);
 
-        // EXTRAEMOS LOS DATOS RELEVANTES DE LA RESPUESTA DE LA BASE DE DATOS
-        /*const perfilesData = perfiles.map(perfil => ({
-            id: perfil.id_perfil,
-            nombre: perfil.nombre,
-        }));*/
+        if (!perfiles || perfiles.length === 0) {
+            // Manejo de caso en que no se obtengan resultados
+            return response.status(404).json({
+                next: false,
+                message: "No se encontraron perfiles para el UUID proporcionado"
+            });
+        }
 
-        // ENVIAMOS LA RESPUESTA JSON CON LOS DATOS EXTRAIDOS
-        response.json({
-            message: 'GET API - CONTROLLER',
-            perfiles: perfiles
+        // RESPUESTA EXITOSA CON LOS PERFILES OBTENIDOS
+        return response.status(200).json({
+            message: 'Perfiles obtenidos correctamente',
+            perfiles: perfiles,
+            next: true
         });
 
-        // ENVIAMOS EL CORREO ELECTRONICO CON LOS DATOS OBTENIDOS
+        // Podrías enviar el correo después de la respuesta si es necesario
         // await enviarCorreo();
     } catch (error) {
-        console.error('ERROR AL OBTENER LOS PERFILES: ', error);
-        response.status(500).json({ error: 'ERROR AL OBTENER LOS PERFILES' });
+        // Manejo de error general
+        console.error('ERROR AL OBTENER LOS PERFILES:', error);
+        return response.status(500).json({
+            next: false,
+            message: 'Error interno al obtener los perfiles',
+            error: error.message // O puedes remover esto en producción
+        });
     }
-}
+};
+
 
 
 module.exports = {
