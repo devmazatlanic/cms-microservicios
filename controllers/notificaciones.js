@@ -91,26 +91,20 @@ const post_notificacion_solicitudautorizacion = async (request, response) => {
 
 const post_notificaciones = async (request, response) => {
     const body = request.body;
-    // console.log('body: ', request.body);
+    console.log('body: ', request.body);
+
+    // Validar si el campo `uuid` existe
+    if (!body.to && !body.subject && !body.body) {
+        return response.status(400).json({
+            next: false,
+            message: "NECESITA UN TO, SUBJECT Y BODY PARA ENVIAR EL CORREO."
+        });
+    }
+
     try {
-        // // OBTENEMOS LOS DATOS DE SOLICITUD DE AUTORIZACION DESDE LA BASE DE DATOS
-        // const solicitudautorizacion = await getSolicitudAutorizacion(body.id_solicitudautorizacion);
-        // // VALIDAR QUE LA RESPUESTA DE LA BASE DE DATOS SEA UN ARRAY Y TENGA AL MENOS UN ELEMENTO
-        // if (!Array.isArray(solicitudautorizacion) || solicitudautorizacion.length === 0) {
-        //     throw new Error('NO SE ENCONTRARON DATOS EN LA BASE DE DATOS.');
-        // }
-
-        // // EXTRAEMOS LOS DATOS RELEVANTES DE LA RESPUESTA DE LA BASE DE DATOS
-        // const data = solicitudautorizacion.map(solicitud => ({
-        //     quiensolicita: solicitud.quiensolicita,
-        //     comentarios: solicitud.comentarios,
-        //     email_quiensolicita: solicitud.email_quiensolicita,
-        //     quienautoriza: solicitud.quienautoriza,
-        //     email_quienautoriza: solicitud.email_quienautoriza
-        // }));
-
         // ENVIAMOS LA RESPUESTA JSON CON LOS DATOS EXTRAIDOS
-        response.json({
+        response.status(200).json({
+            next: true,
             message: 'SE ENVIO EL CORREO CON EXITO.'
         });
 
@@ -123,7 +117,7 @@ const post_notificaciones = async (request, response) => {
 
     } catch (error) {
         console.error('ERROR AL OBTENER LA SOLICITUD, VUELVA A INTENTARLO O HABLE CON EL DPTO. DE TI: ', error);
-        response.status(500).json({ message: 'ERROR AL OBTENER LA SOLICITUD, VUELVA A INTENTARLO O HABLE CON EL DPTO. DE TI.' });
+        response.status(500).json({ next: false, message: 'ERROR AL OBTENER LA SOLICITUD, VUELVA A INTENTARLO O HABLE CON EL DPTO. DE TI.' });
     }
 };
 
