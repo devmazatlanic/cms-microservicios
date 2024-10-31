@@ -10,7 +10,7 @@ class Server {
         this.perfiles_path = '/api/perfiles';
         this.notificaciones_path = '/api/notificaciones';
         this.ingresos_path = '/api/ingresos';
-        this.rfid_path = '/api/rfid';
+        this.rfid_path = '/api/hware';
         // MIDDLEWARES
         this.middlewares();
         // ROUTES

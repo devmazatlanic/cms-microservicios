@@ -24,6 +24,33 @@ const getPerfiles = async () => {
     }
 };
 
+const getPerfil = async (_uuid) => {
+    try{
+        // CONSULTA USANDO PARÁMETROS PREPARADOS
+        const queryResult = await new Promise((resolve, reject) => {
+            let sql = `
+                SELECT
+                    perfiles.id_perfil,
+                    perfiles._uuid,
+                FROM perfiles
+                WHERE perfiles._uuid = ?`;
+
+            connection.query(sql, [_uuid], (error, results) => {
+                if (error) {
+                    reject(error);
+                } else {
+                    resolve(results);
+                }
+            });
+        });
+
+        return queryResult;
+
+    }catch(error){
+        throw new Error('', error);
+    }
+}
+
 const getUsuario = async (_idUsuario) => {
     try {
         // CONSULTA USANDO PARÁMETROS PREPARADOS
@@ -36,7 +63,7 @@ const getUsuario = async (_idUsuario) => {
                     perfiles.email
                 FROM tcr_usuarios
                 JOIN perfiles on perfiles.id_perfil = tcr_usuarios.usu_idPerfil
-                WHERE tcr_usuarios.usu_idUsuario = ?`;
+                WHERE tcr_usuarios._uuid = ?`;
 
             connection.query(sql, [_idUsuario], (error, results) => {
                 if (error) {
@@ -75,5 +102,6 @@ const getCorreosByDepartamento = async (data) => {
 module.exports = {
     getPerfiles,
     getUsuario,
+    getPerfil,
     getCorreosByDepartamento
 };
