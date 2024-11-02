@@ -1,53 +1,103 @@
 const { request, response } = require('express');
 // const { enviarCorreo } = require('../config/mail');
-const { getUsuario } = require('../models/perfiles');
+const { getDispositivo, store } = require('../models/dispositivos');
+const { getPerfil } = require('../models/perfiles');
 
-const post_rfid = async (request, response) => {
-    const { uuid } = request.body; // Extracción directa de `uuid`
+const post_sensor = async (request, response) => {
+    const { mac } = request.body; // Extracción directa de `uuid`
     console.log('body:', request.body);
 
-    // Validar si el campo `uuid` existe
-    if (!uuid) {
+    if (!mac) {
         return response.status(400).json({
             next: false,
-            message: "El UUID es necesario"
+            message: "LA MAC-ADDRESS ES NECESARIA"
         });
     }
 
     try {
         // OBTENER EL USUARIO DESDE LA BASE DE DATOS
-        const perfiles = await getUsuario(uuid);
+        const _dispositivo = await getDispositivo(mac);
 
-        if (!perfiles || perfiles.length === 0) {
+        if (!_dispositivo || _dispositivo.length === 0) {
             // Manejo de caso en que no se obtengan resultados
             return response.status(404).json({
                 next: false,
-                message: "No se encontraron perfiles para el UUID proporcionado"
+                message: "NO SE ENCONTRO EL DISPOSITIVO."
             });
+        }else{
+            // VERIFICAMOS QUE EXISTA UNA CONFIGURACION
+            let _config = JSON.parse(_dispositivo[0].config);
+
+            // INSERTARMOS REGISTROS
+            const _store_registro = await store({
+                'id_dispositivo_lector': _dispositivo[0].id
+            });
+            if(_store_registro){
+                // RESPUESTA EXITOSA CON LOS PERFILES OBTENIDOS
+                return response.status(200).json({
+                    message: 'REGISTRO EXITOSO.',
+                    next: true,
+                    config: _config
+                });
+            }else{
+                return response.status(200).json({
+                    message: 'HUBO UN ERROR EN EL SERVIDOR.',
+                    next: false
+                });
+            }
         }
-
-        // RESPUESTA EXITOSA CON LOS PERFILES OBTENIDOS
-        return response.status(200).json({
-            message: 'Perfiles obtenidos correctamente',
-            perfiles: perfiles,
-            next: true
-        });
-
-        // Podrías enviar el correo después de la respuesta si es necesario
-        // await enviarCorreo();
     } catch (error) {
         // Manejo de error general
-        console.error('ERROR AL OBTENER LOS PERFILES:', error);
+        console.error('ERROR AL OBTENER LOS DISPOSITIVOS:', error);
         return response.status(500).json({
             next: false,
-            message: 'Error interno al obtener los perfiles',
+            message: 'Error interno al obtener los dispositivos',
             error: error.message // O puedes remover esto en producción
         });
     }
 };
 
 
+const post_uuid = async (request, response) => {
+    const { uuid } = request.body; // Extracción directa de `uuid`
+    console.log('body:', request.body);
+
+    if (!uuid) {
+        return response.status(400).json({
+            next: false,
+            message: "LA UUID ES NECESARIA"
+        });
+    }
+
+    try {
+        // OBTENER EL USUARIO DESDE LA BASE DE DATOS
+        const _perfil = await getPerfil(uuid);
+
+        if (!_perfil || _perfil.length === 0) {
+            // Manejo de caso en que no se obtengan resultados
+            return response.status(404).json({
+                next: false,
+                message: "NO SE ENCONTRO EL DISPOSITIVO."
+            });
+        }else{
+            return response.status(200).json({
+                message: 'REGISTRO EXITOSO.',
+                data: request.body,
+                next: true
+            });
+        }
+    } catch (error) {
+        // Manejo de error general
+        console.error('ERROR AL OBTENER LOS DISPOSITIVOS:', error);
+        return response.status(500).json({
+            next: false,
+            message: 'Error interno al obtener los dispositivos',
+            error: error.message // O puedes remover esto en producción
+        });
+    }
+};
 
 module.exports = {
-    post_rfid
+    post_sensor,
+    post_uuid
 }
