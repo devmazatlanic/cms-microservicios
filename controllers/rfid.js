@@ -97,7 +97,6 @@ const post_uuid = async (request, response) => {
 
             let statusTarjeta = parseInt(_tarjeta[0].status_alta);
             if(statusTarjeta === 1){
-
                 //VALIDAR SI EXISTE EL DISPOSITIVO
                 if(!_dispositivo || _dispositivo.length === 0 ){
 
@@ -119,7 +118,7 @@ const post_uuid = async (request, response) => {
                         });
 
                     }else{
-
+                        console.log(_perfil);
                         // VERIFICAMOS QUE EXISTA UNA CONFIGURACION
                         let _config = JSON.parse(_dispositivo[0].config);
 
