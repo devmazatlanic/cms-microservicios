@@ -26,7 +26,7 @@ const post_sensor = async (request, response) => {
             });
         }else{
             // VERIFICAMOS QUE EXISTA UNA CONFIGURACION
-            let _config = JSON.parse(_dispositivo[0].config);
+            let _config = _dispositivo[0].config;
 
             // INSERTARMOS REGISTROS
             const _store_registro = await store({
@@ -37,7 +37,7 @@ const post_sensor = async (request, response) => {
                 return response.status(200).json({
                     message: 'REGISTRO EXITOSO.',
                     next: true,
-                    config: _config
+                    config: JSON.parse(_config)
                 });
             }else{
                 return response.status(200).json({
