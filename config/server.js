@@ -1,16 +1,28 @@
 const express = require('express');
 const cors = require('cors');
+const http = require('http');
+const io = require('socket.io');
 
 class Server {
 
     constructor() {
         this.app = express();
+        this.server = http.createServer(this.app);
         this.port = process.env.PORT;
+        this.Io = io(this.server, {
+            cors: {
+                origin: 'http://cmsmic.local',
+                methods: ['GET', 'POST'],
+                allowedHeaders: ['Content-Type'],
+                credentials: true
+            }
+        });
         // ROUTE PATHS
         this.perfiles_path = '/api/perfiles';
         this.notificaciones_path = '/api/notificaciones';
         this.ingresos_path = '/api/ingresos';
         this.rfid_path = '/api/hware';
+        this.pantallas_path = '/api/pantallas';
         // MIDDLEWARES
         this.middlewares();
         // ROUTES
@@ -24,6 +36,12 @@ class Server {
         this.app.use(express.json());
         // DIRECTORIO PUBLICO
         this.app.use(express.static('public'));
+
+        //SOCKETS
+        this.app.use((req, res, next) => {
+            req.io = this.Io; // Añade io al objeto de solicitud
+            next();
+        });
     }
 
     routes() {
@@ -31,10 +49,24 @@ class Server {
         this.app.use(this.notificaciones_path, require('../routes/notificaciones'));
         this.app.use(this.ingresos_path, require('../routes/ingresos'));
         this.app.use(this.rfid_path, require('../routes/rfid'));
+        this.app.use(this.pantallas_path, require('../routes/pantallas'));
+    }
+
+    initSocket() { 
+        const { socket_pantalla } = require('../controllers/pantallas');
+        this.Io.on('connection', (socket) => {
+
+            console.log('Cliente conectado:', socket.id);
+
+            socket_pantalla(socket, this.Io, {name: 'Josue', socket: 'getMac'});
+            socket.on('disconnect', () => {
+                console.log('Cliente desconectado:', socket.id);
+            });
+        });
     }
 
     listen() {
-        this.app.listen(this.port, () => {
+        this.server.listen(this.port, () => {
             console.log('SERVIDOR CORRIENDO EN PUERTO ', this.port);
         });
     }

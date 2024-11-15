@@ -2,7 +2,7 @@ const { connection } = require('../databases/config');
 
 
 const getTarjeta = async (_uuid) => {
-    try{
+    try {
         // CONSULTA USANDO PARÁMETROS PREPARADOS
         const queryResult = await new Promise((resolve, reject) => {
             let sql = `
@@ -19,10 +19,15 @@ const getTarjeta = async (_uuid) => {
             });
         });
 
+        if (queryResult.length === 0) {
+            throw new Error(`No se encontró la tarjeta con UUID: ${_uuid}`);
+        }
+
         return queryResult;
 
-    }catch(error){
-        throw new Error('ERROR AL ENCONTRAR LA TARJETA', error)
+    } catch (error) {
+        console.error("ERROR AL OBTENER LOS DISPOSITIVOS: Error:", error.message);
+        throw new Error("ERROR AL ENCONTRAR LA TARJETA:");
     }
 };
 
