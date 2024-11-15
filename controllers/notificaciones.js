@@ -91,7 +91,7 @@ const post_notificacion_solicitudautorizacion = async (request, response) => {
 
 const post_notificaciones = async (request, response) => {
     const body = request.body;
-    console.log('body: ', request.body);
+    // console.log('body: ', request.body);
 
     // Validar si el campo `uuid` existe
     if (!body.to && !body.subject && !body.body) {

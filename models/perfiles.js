@@ -30,10 +30,10 @@ const getPerfil = async (_uuid) => {
         // CONSULTA USANDO PARÁMETROS PREPARADOS
         const queryResult = await new Promise((resolve, reject) => {
             let sql = `
-                SELECT pf.id_perfil, pf._uuid, cat_tarjetas_rfid.id AS tarjetaId 
+                SELECT pf.id_perfil, pf.nombre, pf.apellido_paterno, cat_tarjetas_rfid.uuid as tarjeta
                 FROM perfiles AS pf 
-                LEFT JOIN cat_tarjetas_rfid ON cat_tarjetas_rfid.uuid = pf._uuid
-                WHERE pf._uuid = ?`;
+                LEFT JOIN cat_tarjetas_rfid ON cat_tarjetas_rfid.id = pf.id_tarjeta_rfid
+                WHERE cat_tarjetas_rfid.uuid = ?`;
 
             connection.query(sql, [_uuid], (error, results) => {
                 if (error) {
