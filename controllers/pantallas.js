@@ -1,11 +1,11 @@
-const {getPantallabyId, getPantallabyMac, createPantalla, getPlaylisPantallabyMac} = require('../models/pantallas');
-const {get_mac_address} = require('../controllers/tools');
+const { getPantallabyId, getPantallabyMac, createPantalla, getPlaylisPantallabyMac } = require('../models/pantallas');
+const { get_mac_address } = require('../helpers/tools');
 const macaddress = require('macaddress');
 
 const get_pantalla_by_id = async (request, response) => {
-    const {id} = request.body;
+    const { id } = request.body;
 
-    if(!id){
+    if (!id) {
         return response.status(500).json({
             message: 'Debe enviar el id de la pantalla.'
         });
@@ -14,7 +14,7 @@ const get_pantalla_by_id = async (request, response) => {
     try {
         // OBTENEMOS LA PANTALLA DESDE LA BASE DE DATOS
         const pantalla = await getPantallabyId(id);
-        if(!pantalla){
+        if (!pantalla) {
             return response.status(404).json({
                 message: 'No se encontró la pantalla.'
             });
@@ -26,7 +26,7 @@ const get_pantalla_by_id = async (request, response) => {
             pantalla: pantalla
         });
 
-    }catch(e){
+    } catch (e) {
         throw new Error('No se encontró la pantalla', e);
     }
 };
@@ -80,14 +80,14 @@ const store_pantalla = async (req, res) => {
             'mac_address': mac
         });
 
-        if(_store_registro){
+        if (_store_registro) {
             // RESPUESTA EXITOSA AL CREAR LA PANTALLA
             return res.status(200).json({
                 message: 'REGISTRO EXITOSO.',
                 next: true,
-                mac_address: mac 
+                mac_address: mac
             });
-        }else{
+        } else {
             return res.status(500).json({
                 message: 'HUBO UN ERROR EN EL SERVIDOR',
                 next: false
@@ -103,23 +103,25 @@ const store_pantalla = async (req, res) => {
 };
 
 //conexion socket
-const socket_pantalla = async (socket, io, _data = {}) => {
+const socket_pantalla = async (_data = {}) => {
 
-    socket.on(_data.socket, async () => {
-
+    _data.socket.on(_data.socket, async () => {
         try {
-            const mac = await get_mac_address();
-            console.log('MAC address:', mac);
+            // CACHAMOS LA MAC ADRESS DEL CLIENTE A TRAVEZ DEL SOCKET            
+            // LO ASIGNAMOS A LA VARIABLE _MAC PARA EMPEZAR A REALIZAR EL PROCEDIMIENTO
+            console.log('MOSTRAR LA MAC ADRESS DEL CLIENTE UNA VEZ ENVIADA POR EL SOCKET');
+            console.log('');
+            const _mac = "";
 
             const encontrarPantalla = await getPantallabyMac(mac);
 
             //BUSCAMOS SI YA TENEMOS REGISTRADO LA PANTALLA CON LA MAC ADDRESS OBTENIDO
             if (encontrarPantalla.length > 0) {
                 const contenidoPantalla = await getPlaylisPantallabyMac(mac);
-                if (contenidoPantalla.length === 0 ){
-                    socket.emit('playlist_response', { message: `No se ha encontado un playlist asociada a esta pantalla con mac addres: ${mac}`, data: [] });
-                }else{
-                    socket.emit('playlist_response', { message: 'Se encontró la pantalla con contenido', data: contenidoPantalla });
+                if (contenidoPantalla.length === 0) {
+                    _data.socket.emit('playlist_response', { message: `No se ha encontado un playlist asociada a esta pantalla con mac addres: ${mac}`, data: [] });
+                } else {
+                    _data.socket.emit('playlist_response', { message: 'Se encontró la pantalla con contenido', data: contenidoPantalla });
                 }
             } else {
                 //SINO SE ENCUENTRA, RESGISTRAMOS LA NUEVA PANTALLA/DISP CON ESA MAC ADDESS
@@ -127,15 +129,15 @@ const socket_pantalla = async (socket, io, _data = {}) => {
                     'mac_address': mac
                 });
 
-                if(_store_registro) {
+                if (_store_registro) {
                     //AQUI YA SE REGISTRO LA PANTALLA PERO AL SER NUEVA NO HAY UNA PLAYLIST ASIGNADA 
-                    socket.emit('playlist_response', { message: `se guardo la pantalla per no se encontro un playlist asociado a esta pantalla con mac addres: ${mac}`, data: false });
+                    _data.socket.emit('playlist_response', { message: `se guardo la pantalla per no se encontro un playlist asociado a esta pantalla con mac addres: ${mac}`, data: false });
                 }
             }
-            io.emit('MAC_response', { message: `Mac address: ${mac}` });
+            _data.io.emit('MAC_response', { message: `Mac address: ${mac}` });
         } catch (error) {
-            io.emit('MAC_response', { message: 'Error al obtener la MAC address' });
-            socket.emit('playlist_response', { message: `No hay playlist para esta pantalla ${error.mess}` , data: false });
+            _data.io.emit('MAC_response', { message: 'Error al obtener la MAC address' });
+            _data.socket.emit('playlist_response', { message: `No hay playlist para esta pantalla ${error.mess}`, data: false });
         }
     });
 };

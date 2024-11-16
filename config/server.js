@@ -11,7 +11,7 @@ class Server {
         this.port = process.env.PORT;
         this.Io = io(this.server, {
             cors: {
-                origin: 'http://cmsmic.local',
+                origin: 'http://177.230.59.180',
                 methods: ['GET', 'POST'],
                 allowedHeaders: ['Content-Type'],
                 credentials: true
@@ -52,15 +52,22 @@ class Server {
         this.app.use(this.pantallas_path, require('../routes/pantallas'));
     }
 
-    initSocket() { 
+    initSocket() {
         const { socket_pantalla } = require('../controllers/pantallas');
+        const { get_mac_address } = require('../helpers/tools');
+
         this.Io.on('connection', (socket) => {
-
-            console.log('Cliente conectado:', socket.id);
-
-            socket_pantalla(socket, this.Io, {name: 'Josue', socket: 'getMac'});
+            console.log('CLIENTE CONECTADO - socket:', socket);
+            console.log('CLIENTE CONECTADO - Io:', this.Io);
+            // get_mac_address => VAMOS A MANDAR LA MAC ADRESS A TRAVEZ DEL SOCKET
+            // EL SOCKET DEBE DE CACHAR LA MAC ADRESS
+            socket_pantalla({
+                socket: socket,
+                io: this.Io,
+                name: 'getMac'
+            });
             socket.on('disconnect', () => {
-                console.log('Cliente desconectado:', socket.id);
+                console.log('CLIENTE DESCONECTADO:', socket.id);
             });
         });
     }
