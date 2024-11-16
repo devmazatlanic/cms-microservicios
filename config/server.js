@@ -7,14 +7,18 @@ class Server {
 
     constructor() {
         this.app = express();
-        this.server = http.createServer(this.app);
+        this.app.use(cors({
+            origin: 'http://dev.mazatlanic.local',
+            methods: ['GET', 'POST'],
+            credentials: true,
+        }));
         this.port = process.env.PORT;
-        this.Io = io(this.server, {
+        this.server = http.createServer(this.app);
+        this.io = io(this.server, {
             cors: {
-                origin: 'http://177.230.59.180',
-                methods: ['GET', 'POST'],
-                allowedHeaders: ['Content-Type'],
-                credentials: true
+                origin: 'http://dev.mazatlanic.local', // Permite esta URL
+                methods: ['GET', 'POST'], // Métodos permitidos
+                credentials: true, // Permitir cookies y credenciales
             }
         });
         // ROUTE PATHS
@@ -39,7 +43,7 @@ class Server {
 
         //SOCKETS
         this.app.use((req, res, next) => {
-            req.io = this.Io; // Añade io al objeto de solicitud
+            req.io = this.io; // Añade io al objeto de solicitud
             next();
         });
     }
@@ -54,22 +58,13 @@ class Server {
 
     initSocket() {
         const { socket_pantalla } = require('../controllers/pantallas');
-        const { get_mac_address } = require('../helpers/tools');
 
-        this.Io.on('connection', (socket) => {
-            console.log('CLIENTE CONECTADO - socket:', socket);
-            console.log('CLIENTE CONECTADO - Io:', this.Io);
-            // get_mac_address => VAMOS A MANDAR LA MAC ADRESS A TRAVEZ DEL SOCKET
-            // EL SOCKET DEBE DE CACHAR LA MAC ADRESS
-            socket_pantalla({
-                socket: socket,
-                io: this.Io,
-                name: 'getMac'
-            });
-            socket.on('disconnect', () => {
-                console.log('CLIENTE DESCONECTADO:', socket.id);
-            });
+        socket_pantalla({
+            io: this.io,
+            client: 'data',
+            server: 'response'
         });
+
     }
 
     listen() {

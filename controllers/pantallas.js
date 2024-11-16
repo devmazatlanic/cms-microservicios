@@ -104,41 +104,46 @@ const store_pantalla = async (req, res) => {
 
 //conexion socket
 const socket_pantalla = async (_data = {}) => {
+    let _return = { message: 'NO SE PUDO ESTABLECER CONEXION A LAS LISTAS DE REPRODUCCION.', next: false };
 
-    _data.socket.on(_data.socket, async () => {
-        try {
-            // CACHAMOS LA MAC ADRESS DEL CLIENTE A TRAVEZ DEL SOCKET            
-            // LO ASIGNAMOS A LA VARIABLE _MAC PARA EMPEZAR A REALIZAR EL PROCEDIMIENTO
-            console.log('MOSTRAR LA MAC ADRESS DEL CLIENTE UNA VEZ ENVIADA POR EL SOCKET');
-            console.log('');
-            const _mac = "";
+    _data.io.on('connection', (_socket) => {
+        const clientId = _socket.handshake.query.clientId; // Obtener el ID único enviado por el cliente
+        console.log('Cliente conectado con ID persistente:', clientId);
 
-            const encontrarPantalla = await getPantallabyMac(mac);
+        // Enviar el ID al cliente si es necesario
+        _socket.emit('connected', clientId);
 
-            //BUSCAMOS SI YA TENEMOS REGISTRADO LA PANTALLA CON LA MAC ADDRESS OBTENIDO
+        // CONEXION HACIA LA PANTALLA - RESPUESTA: ON
+        _socket.on(_data.client, async (_response) => {
+            let { mac_address } = _response;
+            console.log('MENSAJE RECIBIDO:', _response);
+
+            const encontrarPantalla = await getPantallabyMac(mac_address);
+            // VALIDAMOS QUE EXISTA LA PANTALLA, EN CASO DE QUE NO, LA REGISTRAMOS DE MANERA AUTOMATICA
             if (encontrarPantalla.length > 0) {
-                const contenidoPantalla = await getPlaylisPantallabyMac(mac);
-                if (contenidoPantalla.length === 0) {
-                    _data.socket.emit('playlist_response', { message: `No se ha encontado un playlist asociada a esta pantalla con mac addres: ${mac}`, data: [] });
-                } else {
-                    _data.socket.emit('playlist_response', { message: 'Se encontró la pantalla con contenido', data: contenidoPantalla });
+                // AHORA BUSCAMOS UNA LISTA DE REPRODUCCION CARGADA A LA PANTALLA
+                const contenidoPantalla = await getPlaylisPantallabyMac(mac_address);
+                if (contenidoPantalla.length !== 0) {
+                    _return.playlist = contenidoPantalla;
+                    _return.next = true;
                 }
             } else {
                 //SINO SE ENCUENTRA, RESGISTRAMOS LA NUEVA PANTALLA/DISP CON ESA MAC ADDESS
                 const _store_registro = await createPantalla({
-                    'mac_address': mac
+                    'mac_address': mac_address
                 });
 
-                if (_store_registro) {
-                    //AQUI YA SE REGISTRO LA PANTALLA PERO AL SER NUEVA NO HAY UNA PLAYLIST ASIGNADA 
-                    _data.socket.emit('playlist_response', { message: `se guardo la pantalla per no se encontro un playlist asociado a esta pantalla con mac addres: ${mac}`, data: false });
-                }
+                _return.message = "SE ACABA DE CREAR ESTA NUEVA PANTALLA " + mac_address + " EXITOSAMENTE.";
             }
-            _data.io.emit('MAC_response', { message: `Mac address: ${mac}` });
-        } catch (error) {
-            _data.io.emit('MAC_response', { message: 'Error al obtener la MAC address' });
-            _data.socket.emit('playlist_response', { message: `No hay playlist para esta pantalla ${error.mess}`, data: false });
-        }
+
+
+            // ENVIAMOS RESPPUESTA A LA PANTALLA: EMIT
+            _socket.emit(_data.server, _return);
+
+            _socket.on('disconnect', () => {
+                console.log('Cliente desconectado:', clientId);
+            });
+        });
     });
 };
 
