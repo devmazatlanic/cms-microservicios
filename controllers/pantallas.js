@@ -126,6 +126,7 @@ const socket_pantalla = async (_data = {}) => {
                 if (contenidoPantalla.length !== 0) {
                     _return.playlist = contenidoPantalla;
                     _return.next = true;
+                    _return.message = "SE ENCONTRO UNA PLAYLIST ASOCIADA A LA PANTALLA CON MAC_ADDRESS :" + mac_address + " EXITOSAMENTE.";
                 }
             } else {
                 //SINO SE ENCUENTRA, RESGISTRAMOS LA NUEVA PANTALLA/DISP CON ESA MAC ADDESS
@@ -135,7 +136,6 @@ const socket_pantalla = async (_data = {}) => {
 
                 _return.message = "SE ACABA DE CREAR ESTA NUEVA PANTALLA " + mac_address + " EXITOSAMENTE.";
             }
-
 
             // ENVIAMOS RESPPUESTA A LA PANTALLA: EMIT
             _socket.emit(_data.server, _return);

@@ -14,11 +14,13 @@ class Server {
         }));
         this.port = process.env.PORT;
         this.server = http.createServer(this.app);
+        const corsConfig = JSON.parse(process.env.CORS_CONFIG);
+
         this.io = io(this.server, {
             cors: {
-                origin: 'http://dev.mazatlanic.local', // Permite esta URL
-                methods: ['GET', 'POST'], // Métodos permitidos
-                credentials: true, // Permitir cookies y credenciales
+                origin: corsConfig.origins,
+                methods: ['GET', 'POST'],
+                credentials: corsConfig.allowCredentials,
             }
         });
         // ROUTE PATHS
