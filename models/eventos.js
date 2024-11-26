@@ -18,8 +18,24 @@ const procesure_getDatosGeneralesEventosById = async (evento_id) => {
     }
 };
 
+const evenots_web = async () => {
+    try {
+        const query_result = await new Promise((resolve, reject) => {
+            const query = 'SELECT evento, DATE_FORMAT(fecha_inicio, "%d/%m/%Y") fecha, descripcion, image, salones FROM web_events WHERE status_alta = 1 AND DATE(fecha_inicio) >= CURRENT_DATE()';
 
+            connection.query(query, (error, results) => {
+                if (error) reject(error);
+                else resolve(results);
+            });
+        });
+
+        return query_result;
+    } catch (error) {
+        throw error;
+    }
+}
 
 module.exports = {
-    procesure_getDatosGeneralesEventosById
+    procesure_getDatosGeneralesEventosById,
+    evenots_web
 };
