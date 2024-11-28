@@ -18,7 +18,7 @@ const event_list = async (request, response) => {
         const _eventos = eventos.map(_element => ({
             evento: _element.evento,
             fecha: _element.fecha,
-            image: `data:image/png;base64,${_element.image.toString('base64')}`
+            image: `data:image/png;base64,${_element.image}`
         }));
 
 
