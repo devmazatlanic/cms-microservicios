@@ -14,14 +14,21 @@ const event_list = async (request, response) => {
             message: "NO SE ENCONTRARON EVENTOS."
         });
     } else {
+        // EXTRAEMOS LOS DATOS RELEVANTES DE LA RESPUESTA DE LA BASE DE DATOS
+        const _eventos = eventos.map(_element => ({
+            evento: _element.evento,
+            fecha: _element.fecha,
+            image: `data:image/png;base64,${_element.image.toString('base64')}`
+        }));
+
+
         return response.status(200).json({
-            data: eventos,
+            data: _eventos,
             next: true
         });
     }
 
 };
-
 
 
 module.exports = {
