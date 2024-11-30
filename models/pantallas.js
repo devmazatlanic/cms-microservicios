@@ -25,16 +25,16 @@ const getPantallabyId = async (id) => {
     }
 };
 
-const getPantallabyMac = async (mac) => {
+const getPantallabyToken = async (token) => {
     try{
         // CONSULTA USANDO PARÁMETROS PREPARADOS
         const queryResult = await new Promise((resolve, reject) => {
             let sql = `
                 SELECT *
                 FROM scr_pantallas 
-                WHERE scr_pantallas.mac_address = ?`;
+                WHERE scr_pantallas.token = ?`;
 
-            connection.query(sql, [mac], (error, results) => {
+            connection.query(sql, [token], (error, results) => {
                 if (error) {
                     reject(error);
                 } else {
@@ -50,7 +50,7 @@ const getPantallabyMac = async (mac) => {
     }
 };
 
-const getPlaylisPantallabyMac = async (mac) => {
+const getPlaylisPantallabyToken = async (token) => {
     try{
         const queryResult = await new Promise((resolve, reject) => {
             let sql = `
@@ -59,7 +59,7 @@ const getPlaylisPantallabyMac = async (mac) => {
                     sp.nombre AS pantalla,
                     sp.token,
                     sp.host,
-                    sp.mac_address,
+                    sp.token,
                     sr.nombre AS reproduccion,
                     srd.source
                 FROM scr_pantallas_reproducciones spr
@@ -71,9 +71,9 @@ const getPlaylisPantallabyMac = async (mac) => {
                 ) srd ON srd.id_reproduccion = sr.id
                 JOIN scr_pantallas sp ON sp.id = spr.id_pantalla
                 WHERE spr.status_alta = 1
-                AND sp.mac_address  = ?`;
+                AND sp.token  = ?`;
             
-            connection.query(sql, [mac], (error, results) => {
+            connection.query(sql, [token], (error, results) => {
                 if (error) {
                     reject(error);
                 } else {
@@ -92,9 +92,9 @@ const getPlaylisPantallabyMac = async (mac) => {
 const createPantalla = async (data) => {
     try {
         // CONSULTA DE INSERCION - TCR_AUTORIZACIONSOLICITUD
-            const _sql = `INSERT INTO scr_pantallas (nombre,token, host, mac_address) VALUES (?, ?, ?, ?)`;
+            const _sql = `INSERT INTO scr_pantallas (nombre, host, token) VALUES (?, ?, ?)`;
             const _store = await new Promise((resolve, reject) => {
-            connection.query(_sql, [data.nombre, data.token, data.host,data.mac_address], (error, results) => {
+            connection.query(_sql, [data.nombre, data.host,data.token], (error, results) => {
                 if (error) reject(error);
                 else resolve(results);
             });
@@ -113,7 +113,7 @@ const createPantalla = async (data) => {
 
 module.exports = {
     getPantallabyId,
-    getPantallabyMac,
+    getPantallabyToken,
     createPantalla,
-    getPlaylisPantallabyMac
+    getPlaylisPantallabyToken
 }
