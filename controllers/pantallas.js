@@ -116,6 +116,7 @@ const socket_pantalla = async (_data = {}) => {
         // CONEXION HACIA LA PANTALLA - RESPUESTA: ON
         _socket.on(_data.client, async (_response) => {
             let { mac_address } = _response;
+            
             console.log('MENSAJE RECIBIDO:', _response);
 
             const encontrarPantalla = await getPantallabyMac(mac_address);
