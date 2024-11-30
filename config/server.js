@@ -2,6 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const http = require('http');
 const io = require('socket.io');
+const local_cors = JSON.parse(process.env.LOCAL_CORS);
+const cors_config = JSON.parse(process.env.CORS_CONFIG);
 
 class Server {
 
@@ -9,18 +11,18 @@ class Server {
         const corsConfig = JSON.parse(process.env.CORS_CONFIG);
         this.app = express();
         this.app.use(cors({
-            origin: 'http://192.168.80.241',
+            // origin: local_cors.origins,
             methods: ['GET', 'POST'],
-            credentials: true,
+            credentials: local_cors.allowCredentials
         }));
         this.port = process.env.PORT;
         this.server = http.createServer(this.app);
 
         this.io = io(this.server, {
             cors: {
-                origin: 'http://192.168.80.241',
+                origin: cors_config.origins,
                 methods: ['GET', 'POST'],
-                credentials: corsConfig.allowCredentials,
+                credentials: cors_config.allowCredentials,
             }
         });
         // ROUTE PATHS
@@ -29,7 +31,7 @@ class Server {
         this.ingresos_path = '/api/ingresos';
         this.rfid_path = '/api/hware';
         this.pantallas_path = '/api/pantallas';
-        this.helpers_path = '/api/tools';
+        this.web_path = '/api/web';
         // MIDDLEWARES
         this.middlewares();
         // ROUTES
@@ -77,7 +79,7 @@ class Server {
         this.app.use(this.ingresos_path, require('../routes/ingresos'));
         this.app.use(this.rfid_path, require('../routes/rfid'));
         this.app.use(this.pantallas_path, require('../routes/pantallas'));
-        this.app.use(this.helpers_path, require('../routes/helpers'));
+        this.app.use(this.web_path, require('../routes/web'));
     }
 
     initSocket() {
