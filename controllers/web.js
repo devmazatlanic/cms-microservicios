@@ -45,7 +45,8 @@ const event_list_proximos = async (request, response) => {
         const _eventos = eventos.map(_element => ({
             evento: _element.evento,
             fecha: _element.fecha,
-            image: `data:image/png;base64,${_element.image}`
+            image: `data:image/png;base64,${_element.image}`,
+            salones: _element.salones
         }));
 
 
