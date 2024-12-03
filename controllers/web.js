@@ -1,5 +1,5 @@
 const { request, response } = require('express');
-const { evenots_web_hoy } = require('../models/eventos');
+const { evenots_web_hoy, evenots_web_proximos } = require('../models/eventos');
 // const { enviarCorreo } = require('../config/mail');
 
 
@@ -32,7 +32,7 @@ const event_list_hoy = async (request, response) => {
 
 const event_list_proximos = async (request, response) => {
     // MOSTRAREMOS LISTA DE EVENTOS ACTIVOS
-    const eventos = await evenots_web_hoy();
+    const eventos = await evenots_web_proximos();
 
     if (!eventos || eventos.length === 0) {
         // Manejo de caso en que no se obtengan resultados
