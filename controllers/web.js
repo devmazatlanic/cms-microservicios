@@ -1,5 +1,6 @@
 const { request, response } = require('express');
 const { evenots_web_hoy, evenots_web_proximos } = require('../models/eventos');
+const { addMapeoQr } = require('../models/codigoqrs');
 // const { enviarCorreo } = require('../config/mail');
 
 
@@ -57,8 +58,26 @@ const event_list_proximos = async (request, response) => {
     }
 };
 
+const tracking_codeqr = async (request, response) => {
+    const body = request.body;
+    // console.log('body: ', body);
+
+    try {
+        const result = await addMapeoQr(body);
+        return response.status(500).json({
+            next: true
+        });
+    } catch (error) {
+        console.error('Error al insertar: ', error.message);
+        return response.status(200).json({
+            next: false
+        });
+    }
+}
+
 
 module.exports = {
     event_list_hoy,
-    event_list_proximos
+    event_list_proximos,
+    tracking_codeqr
 }
