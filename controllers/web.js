@@ -60,16 +60,14 @@ const event_list_proximos = async (request, response) => {
 
 const tracking_codeqr = async (request, response) => {
     const body = request.body;
-    // console.log('body: ', body);
-
     try {
         const result = await addMapeoQr(body);
-        return response.status(500).json({
+        return response.status(200).json({
             next: true
         });
     } catch (error) {
         console.error('Error al insertar: ', error.message);
-        return response.status(200).json({
+        return response.status(500).json({
             next: false
         });
     }
