@@ -1,12 +1,12 @@
 const { request, response } = require('express');
-const { evenots_web_hoy, evenots_web_proximos } = require('../models/eventos');
+const { web_today, web_upcoming, web_contactus } = require('../models/eventos');
 const { addMapeoQr } = require('../models/codigoqrs');
-// const { enviarCorreo } = require('../config/mail');
+const { mail_web_contactus } = require('../config/mail');
 
 
-const event_list_hoy = async (request, response) => {
+const today = async (request, response) => {
     // MOSTRAREMOS LISTA DE EVENTOS ACTIVOS
-    const eventos = await evenots_web_hoy();
+    const eventos = await web_today();
 
     if (!eventos || eventos.length === 0) {
         // Manejo de caso en que no se obtengan resultados
@@ -31,9 +31,9 @@ const event_list_hoy = async (request, response) => {
     }
 };
 
-const event_list_proximos = async (request, response) => {
+const upcoming = async (request, response) => {
     // MOSTRAREMOS LISTA DE EVENTOS ACTIVOS
-    const eventos = await evenots_web_proximos();
+    const eventos = await web_upcoming();
 
     if (!eventos || eventos.length === 0) {
         // Manejo de caso en que no se obtengan resultados
@@ -60,6 +60,7 @@ const event_list_proximos = async (request, response) => {
 
 const tracking_codeqr = async (request, response) => {
     const body = request.body;
+
     try {
         const result = await addMapeoQr(body);
         return response.status(200).json({
@@ -73,9 +74,32 @@ const tracking_codeqr = async (request, response) => {
     }
 }
 
+const contactus = async (request, response) => {
+    const body = request.body;
+
+    try {
+        // OBTENEMOS EL RESULTADO DE LA BASE DE DATOS
+        const result = await web_contactus(body);
+        // ENVIAMOS EL CORREO
+        if (result.next) await mail_web_contactus(body);
+        // RESPONDEMOS AL FRONT
+        return response.status(200).json({
+            next: result.next,
+            message: result.message
+        });
+
+    } catch (error) {
+        return response.status(500).json({
+            next: false,
+            message: error.message
+        });
+    }
+}
+
 
 module.exports = {
-    event_list_hoy,
-    event_list_proximos,
-    tracking_codeqr
+    today,
+    upcoming,
+    tracking_codeqr,
+    contactus
 }

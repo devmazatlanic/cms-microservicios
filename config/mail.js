@@ -2,7 +2,7 @@ const nodemailer = require('nodemailer');
 const path = require('path');
 const fs = require('fs');
 const axios = require('axios');
-const { getLayoutTest, getSolicitudAutorizacion, getCancelacionCotizacion, getReciboIngreso, getReporteBancos } = require('../config/plantillas');
+const { getLayoutTest, getSolicitudAutorizacion, getCancelacionCotizacion, getReciboIngreso, getReporteBancos, webContactUs } = require('../config/plantillas');
 
 // Configuración del transporte SMTP
 const transporter = nodemailer.createTransport({
@@ -61,14 +61,14 @@ const enviarCorreo = async (datos) => {
         if (datos.attachments && tempFilePath) {
             fs.unlink(tempFilePath, (err) => {
                 if (err) {
-                    console.error('Error al eliminar el archivo temporal:', err);
+                    throw new Error('ERROR AL ELIMINAR EL ARCHIVO TEMPORAL ', err);
                 } else {
-                    console.log('Archivo temporal eliminado.');
+                    console.log('ARCHIVO TEMPORAL ELIMINADO.');
                 }
             });
         }
     } catch (error) {
-        console.error('ERROR AL ENVIAR EL CORREO: ', error);
+        throw new Error('ERROR AL ENVIAR EL CORREO: ', error.message);
     }
 };
 
@@ -168,10 +168,42 @@ const mail_enviar_reportebancos = async (datos) => {
     }
 };
 
+const mail_web_contactus = async (datos) => {
+    try {
+        // Cargar y renderizar la plantilla HTML
+        const contenidoHTML = await webContactUs(datos);
+
+        // Configuración del correo
+        const mailOptions = {
+            from: 'no-reply@mazatlanic.com',
+            to: datos.correo,
+            cc: 'janto.rodriguez90@gmail.com',
+            subject: '¡GRACIAS POR REGISTRARSE PARA REALIZAR SU PROXIMO EVENTO!',
+            html: contenidoHTML,
+            attachments: [
+                {
+                    filename: 'logomic_correos.png', // Nombre del archivo que verá el destinatario
+                    path: './public/assets/images/logomic_correos.png', // Ruta del archivo en tu sistema
+                    cid: 'logoMIC' // ID único para incrustar la imagen en el HTML (si es necesario)
+                }
+            ]
+        };
+
+        // Enviar el correo
+        const info = await transporter.sendMail(mailOptions);
+        console.log('CORREO ENVIADO:', info.response);
+
+    } catch (error) {
+        console.log(`ERROR AL ENVIAR EL CORREO: ${error}`);
+        throw new Error('ERROR AL ENVIAR EL CORREO.');
+    }
+};
+
 module.exports = {
     enviarCorreo,
     mail_solicitudAutorizacion,
     mail_cancelacionCotizacion,
     mail_enviar_recibodeingreso,
-    mail_enviar_reportebancos
+    mail_enviar_reportebancos,
+    mail_web_contactus
 };
