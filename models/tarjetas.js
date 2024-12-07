@@ -26,7 +26,8 @@ const getTarjeta = async (_uuid) => {
         return queryResult;
 
     } catch (error) {
-        throw new Error(`ERROR AL ENCONTRAR LA TARJETA: ${error.message || error}`);
+        console.error("ERROR AL OBTENER LOS DISPOSITIVOS: Error:", error.message);
+        throw new Error("ERROR AL ENCONTRAR LA TARJETA:");
     }
 };
 

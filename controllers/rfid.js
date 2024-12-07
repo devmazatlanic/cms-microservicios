@@ -163,15 +163,12 @@ const post_uuid = async (request, response) => {
         }
 
     } catch (error) {
-
-        // Manejo de error general
-        console.error('ERROR AL OBTENER LOS DISPOSITIVOS:', error);
+        console.log(error.message);
         return response.status(500).json({
             next: false,
             message: 'Error al insertar',
             error: error.message // O puedes remover esto en producción
         });
-
     }
 
 };
