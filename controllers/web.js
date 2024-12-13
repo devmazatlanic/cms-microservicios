@@ -1,7 +1,7 @@
 const { request, response } = require('express');
 const { web_today, web_upcoming, web_contactus } = require('../models/eventos');
 const { addMapeoQr } = require('../models/codigoqrs');
-const { mail_web_contactus } = require('../config/mail');
+const { mail_web_contactus, mail_web_reminder_contactus } = require('../config/mail');
 
 
 const today = async (request, response) => {
@@ -81,7 +81,11 @@ const contactus = async (request, response) => {
         // OBTENEMOS EL RESULTADO DE LA BASE DE DATOS
         const result = await web_contactus(body);
         // ENVIAMOS EL CORREO
-        if (result.next) await mail_web_contactus(body);
+        if (result.next) {
+            await mail_web_contactus(body);
+        } else {
+            await mail_web_reminder_contactus(body);
+        }
         // RESPONDEMOS AL FRONT
         return response.status(200).json({
             next: result.next,
