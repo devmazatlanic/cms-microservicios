@@ -17,27 +17,39 @@ const transporter = nodemailer.createTransport({
 
 // Función asíncrona para enviar el correo electrónico
 const enviarCorreo = async (datos) => {
-    // console.log(datos);
     try {
-        let fileName = "";
-        let tempFilePath = "";
-        if (datos.attachments) {
-            let fileUrl = datos.attachments;
-            fileName = path.basename(fileUrl);
+        // Validar los campos requeridos
+        if (!datos.to || !datos.subject || !datos.body) {
+            throw new Error('Faltan datos requeridos para enviar el correo (to, subject, body).');
+        }
 
-            // Descarga el archivo con un mayor tiempo de espera
+        let attachmentConfig = [];
+        let tempFilePath = "";
+
+        // Manejo de adjuntos
+        if (datos.attachments) {
+            const fileUrl = datos.attachments;
+            const fileName = path.basename(fileUrl);
+
+            // Descargar el archivo
             const response = await axios.get(fileUrl, {
                 responseType: 'arraybuffer',
-                timeout: 30000 // Establece un timeout de 30 segundos
+                timeout: 30000 // 30 segundos
             });
 
             if (response.status !== 200) {
                 throw new Error(`Error al descargar el archivo: ${response.statusText}`);
             }
 
-            // Guarda el archivo descargado en una ruta temporal
+            // Guardar el archivo en una ruta temporal
             tempFilePath = path.join(__dirname, fileName);
             fs.writeFileSync(tempFilePath, response.data);
+
+            // Configuración del adjunto
+            attachmentConfig.push({
+                filename: fileName,
+                path: tempFilePath
+            });
         }
 
         // Configuración del correo
@@ -45,30 +57,23 @@ const enviarCorreo = async (datos) => {
             from: 'no-reply@mazatlanic.com',
             to: datos.to,
             cc: datos.cc || '',
-            subject: 'INFORMATIVO - ' + datos.subject.toUpperCase(),
+            subject: `INFORMATIVO - ${datos.subject.toUpperCase()}`,
             html: datos.body,
-            attachments: datos.attachments ? [{
-                filename: fileName,
-                path: tempFilePath
-            }] : []
+            attachments: attachmentConfig
         };
 
         // Enviar el correo
         const info = await transporter.sendMail(mailOptions);
         console.log('CORREO ENVIADO:', info.response);
 
-        // Elimina el archivo temporal después de enviar el correo
-        if (datos.attachments && tempFilePath) {
-            fs.unlink(tempFilePath, (err) => {
-                if (err) {
-                    throw new Error('ERROR AL ELIMINAR EL ARCHIVO TEMPORAL ', err);
-                } else {
-                    console.log('ARCHIVO TEMPORAL ELIMINADO.');
-                }
-            });
+        // Eliminar el archivo temporal
+        if (tempFilePath) {
+            await fs.promises.unlink(tempFilePath);
+            console.log('ARCHIVO TEMPORAL ELIMINADO.');
         }
     } catch (error) {
-        throw new Error('ERROR AL ENVIAR EL CORREO: ', error.message);
+        console.error('Error al enviar el correo:', error.message);
+        throw new Error(`ERROR AL ENVIAR EL CORREO: ${error.message}`);
     }
 };
 
@@ -177,7 +182,7 @@ const mail_web_contactus = async (datos) => {
         const mailOptions = {
             from: 'no-reply@mazatlanic.com',
             to: datos.correo,
-            cc: 'janto.rodriguez90@gmail.com',
+            cc: 'susana.arizmendi@mazatlanic.com',
             subject: '¡GRACIAS POR REGISTRARSE PARA REALIZAR SU PROXIMO EVENTO!',
             html: contenidoHTML,
             attachments: [
