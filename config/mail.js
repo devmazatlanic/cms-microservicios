@@ -7,12 +7,16 @@ const { getLayoutTest, getSolicitudAutorizacion, getCancelacionCotizacion, getRe
 // Configuración del transporte SMTP
 const transporter = nodemailer.createTransport({
     host: 'p3plzcpnl506083.prod.phx3.secureserver.net', // Nombre del host SMTP
-    port: 465, // Puerto SMTP seguro
-    secure: true, // true para usar SSL/TLS, false para SMTP no seguro
+    port: 587, // 465: Puerto SMTP seguro
+    secure: false, // true para usar SSL/TLS, false para SMTP no seguro
     auth: {
         user: 'no-reply@mazatlaninternationalcenter.com', // Correo electrónico del remitente
         pass: 'wpN;5xrJaY=T' // Contraseña del correo electrónico del remitente
-    }
+    },
+    tls: {
+        minVersion: 'TLSv1.2'      // Asegúrate de usar TLS 1.2 o superior
+    },
+    debug: true // Activa los logs de depuración
 });
 
 // Función asíncrona para enviar el correo electrónico
