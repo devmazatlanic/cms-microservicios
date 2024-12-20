@@ -2,42 +2,58 @@ const nodemailer = require('nodemailer');
 const path = require('path');
 const fs = require('fs');
 const axios = require('axios');
-const { getLayoutTest, getSolicitudAutorizacion, getCancelacionCotizacion, getReciboIngreso, getReporteBancos } = require('../config/plantillas');
+const { getLayoutTest, getSolicitudAutorizacion, getCancelacionCotizacion, getReciboIngreso, getReporteBancos, webContactUs, webReminderContactUs } = require('../config/plantillas');
 
 // Configuración del transporte SMTP
 const transporter = nodemailer.createTransport({
     host: 'p3plzcpnl506083.prod.phx3.secureserver.net', // Nombre del host SMTP
-    port: 465, // Puerto SMTP seguro
-    secure: true, // true para usar SSL/TLS, false para SMTP no seguro
+    port: 587, // 465: Puerto SMTP seguro
+    secure: false, // true para usar SSL/TLS, false para SMTP no seguro
     auth: {
         user: 'no-reply@mazatlaninternationalcenter.com', // Correo electrónico del remitente
         pass: 'wpN;5xrJaY=T' // Contraseña del correo electrónico del remitente
-    }
+    },
+    tls: {
+        minVersion: 'TLSv1.2'      // Asegúrate de usar TLS 1.2 o superior
+    },
+    debug: true // Activa los logs de depuración
 });
 
 // Función asíncrona para enviar el correo electrónico
 const enviarCorreo = async (datos) => {
-    // console.log(datos);
     try {
-        let fileName = "";
-        let tempFilePath = "";
-        if (datos.attachments) {
-            let fileUrl = datos.attachments;
-            fileName = path.basename(fileUrl);
+        // Validar los campos requeridos
+        if (!datos.to || !datos.subject || !datos.body) {
+            throw new Error('Faltan datos requeridos para enviar el correo (to, subject, body).');
+        }
 
-            // Descarga el archivo con un mayor tiempo de espera
+        let attachmentConfig = [];
+        let tempFilePath = "";
+
+        // Manejo de adjuntos
+        if (datos.attachments) {
+            const fileUrl = datos.attachments;
+            const fileName = path.basename(fileUrl);
+
+            // Descargar el archivo
             const response = await axios.get(fileUrl, {
                 responseType: 'arraybuffer',
-                timeout: 30000 // Establece un timeout de 30 segundos
+                timeout: 30000 // 30 segundos
             });
 
             if (response.status !== 200) {
                 throw new Error(`Error al descargar el archivo: ${response.statusText}`);
             }
 
-            // Guarda el archivo descargado en una ruta temporal
+            // Guardar el archivo en una ruta temporal
             tempFilePath = path.join(__dirname, fileName);
             fs.writeFileSync(tempFilePath, response.data);
+
+            // Configuración del adjunto
+            attachmentConfig.push({
+                filename: fileName,
+                path: tempFilePath
+            });
         }
 
         // Configuración del correo
@@ -45,30 +61,23 @@ const enviarCorreo = async (datos) => {
             from: 'no-reply@mazatlanic.com',
             to: datos.to,
             cc: datos.cc || '',
-            subject: 'INFORMATIVO - ' + datos.subject.toUpperCase(),
+            subject: `INFORMATIVO - ${datos.subject.toUpperCase()}`,
             html: datos.body,
-            attachments: datos.attachments ? [{
-                filename: fileName,
-                path: tempFilePath
-            }] : []
+            attachments: attachmentConfig
         };
 
         // Enviar el correo
         const info = await transporter.sendMail(mailOptions);
         console.log('CORREO ENVIADO:', info.response);
 
-        // Elimina el archivo temporal después de enviar el correo
-        if (datos.attachments && tempFilePath) {
-            fs.unlink(tempFilePath, (err) => {
-                if (err) {
-                    console.error('Error al eliminar el archivo temporal:', err);
-                } else {
-                    console.log('Archivo temporal eliminado.');
-                }
-            });
+        // Eliminar el archivo temporal
+        if (tempFilePath) {
+            await fs.promises.unlink(tempFilePath);
+            console.log('ARCHIVO TEMPORAL ELIMINADO.');
         }
     } catch (error) {
-        console.error('ERROR AL ENVIAR EL CORREO: ', error);
+        console.error('Error al enviar el correo:', error.message);
+        throw new Error(`ERROR AL ENVIAR EL CORREO: ${error.message}`);
     }
 };
 
@@ -168,10 +177,74 @@ const mail_enviar_reportebancos = async (datos) => {
     }
 };
 
+const mail_web_contactus = async (datos) => {
+    try {
+        // Cargar y renderizar la plantilla HTML
+        const contenidoHTML = await webContactUs(datos);
+
+        // Configuración del correo
+        const mailOptions = {
+            from: 'no-reply@mazatlanic.com',
+            to: datos.correo,
+            cc: 'susana.arizmendi@mazatlanic.com',
+            subject: '¡GRACIAS POR REGISTRARSE PARA REALIZAR SU PROXIMO EVENTO!',
+            html: contenidoHTML,
+            attachments: [
+                {
+                    filename: 'logomic_correos.png', // Nombre del archivo que verá el destinatario
+                    path: './public/assets/images/logomic_correos.png', // Ruta del archivo en tu sistema
+                    cid: 'logoMIC' // ID único para incrustar la imagen en el HTML (si es necesario)
+                }
+            ]
+        };
+
+        // Enviar el correo
+        const info = await transporter.sendMail(mailOptions);
+        console.log('CORREO ENVIADO:', info.response);
+
+    } catch (error) {
+        console.log(`ERROR AL ENVIAR EL CORREO: ${error}`);
+        throw new Error('ERROR AL ENVIAR EL CORREO.');
+    }
+};
+
+const mail_web_reminder_contactus = async (datos) => {
+    try {
+        // Cargar y renderizar la plantilla HTML
+        const contenidoHTML = await webReminderContactUs(datos);
+
+        // Configuración del correo
+        const mailOptions = {
+            from: 'no-reply@mazatlanic.com',
+            to: datos.correo,
+            cc: 'susana.arizmendi@mazatlanic.com',
+            subject: '¡GRACIAS POR CONTACTARNOS NUEVAMENTE!',
+            html: contenidoHTML,
+            attachments: [
+                {
+                    filename: 'logomic_correos.png', // Nombre del archivo que verá el destinatario
+                    path: './public/assets/images/logomic_correos.png', // Ruta del archivo en tu sistema
+                    cid: 'logoMIC' // ID único para incrustar la imagen en el HTML (si es necesario)
+                }
+            ]
+        };
+
+        // Enviar el correo
+        const info = await transporter.sendMail(mailOptions);
+        console.log('CORREO ENVIADO:', info.response);
+
+    } catch (error) {
+        console.log(`ERROR AL ENVIAR EL CORREO: ${error}`);
+        throw new Error('ERROR AL ENVIAR EL CORREO.');
+    }
+};
+
 module.exports = {
     enviarCorreo,
     mail_solicitudAutorizacion,
     mail_cancelacionCotizacion,
     mail_enviar_recibodeingreso,
-    mail_enviar_reportebancos
+    mail_enviar_reportebancos,
+    mail_web_contactus,
+    mail_web_reminder_contactus
 };
