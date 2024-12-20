@@ -2,7 +2,7 @@ const nodemailer = require('nodemailer');
 const path = require('path');
 const fs = require('fs');
 const axios = require('axios');
-const { getLayoutTest, getSolicitudAutorizacion, getCancelacionCotizacion, getReciboIngreso, getReporteBancos, webContactUs } = require('../config/plantillas');
+const { getLayoutTest, getSolicitudAutorizacion, getCancelacionCotizacion, getReciboIngreso, getReporteBancos, webContactUs, webReminderContactUs } = require('../config/plantillas');
 
 // Configuración del transporte SMTP
 const transporter = nodemailer.createTransport({
@@ -204,11 +204,43 @@ const mail_web_contactus = async (datos) => {
     }
 };
 
+const mail_web_reminder_contactus = async (datos) => {
+    try {
+        // Cargar y renderizar la plantilla HTML
+        const contenidoHTML = await webReminderContactUs(datos);
+
+        // Configuración del correo
+        const mailOptions = {
+            from: 'no-reply@mazatlanic.com',
+            to: datos.correo,
+            cc: 'susana.arizmendi@mazatlanic.com',
+            subject: '¡GRACIAS POR CONTACTARNOS NUEVAMENTE!',
+            html: contenidoHTML,
+            attachments: [
+                {
+                    filename: 'logomic_correos.png', // Nombre del archivo que verá el destinatario
+                    path: './public/assets/images/logomic_correos.png', // Ruta del archivo en tu sistema
+                    cid: 'logoMIC' // ID único para incrustar la imagen en el HTML (si es necesario)
+                }
+            ]
+        };
+
+        // Enviar el correo
+        const info = await transporter.sendMail(mailOptions);
+        console.log('CORREO ENVIADO:', info.response);
+
+    } catch (error) {
+        console.log(`ERROR AL ENVIAR EL CORREO: ${error}`);
+        throw new Error('ERROR AL ENVIAR EL CORREO.');
+    }
+};
+
 module.exports = {
     enviarCorreo,
     mail_solicitudAutorizacion,
     mail_cancelacionCotizacion,
     mail_enviar_recibodeingreso,
     mail_enviar_reportebancos,
-    mail_web_contactus
+    mail_web_contactus,
+    mail_web_reminder_contactus
 };
