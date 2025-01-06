@@ -140,8 +140,9 @@ const socket_pantalla = async (_data = {}) => {
                         }
                     }
                 } else {
-                    // SINO LA ENCUENTRA QUIERE DECIR QUE NO EXISTE, LA REGISTRAMOS                   const _store_registro = await createPantalla({ 'token': token });
-                    _return.message = `SE ACABA DE CREAR ESTA NUEVA PANTALLA: ${token} EXITOSAMENTE.`;
+                    // SINO LA ENCUENTRA QUIERE DECIR QUE NO EXISTE, LA REGISTRAMOS   
+                    const _store_registro = await createPantalla({ 'token': token });
+                    if(_store_registro){  _return.message = `SE ACABA DE CREAR ESTA NUEVA PANTALLA: ${token} EXITOSAMENTE.`; }
                 }
 
                 // ENVIAMOS LA RESPUESTA AL CLIENTE
