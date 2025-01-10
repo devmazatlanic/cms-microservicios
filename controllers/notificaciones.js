@@ -5,6 +5,9 @@ const { getSolicitudAutorizacion, setSolicitudAutorizacionByNotificacion } = req
 const { getReportesBancos } = require('../models/reportes');
 const { procesure_getDatosGeneralesEventosById } = require('../models/eventos');
 
+// Asegúrate de tener esta función definida.
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 
 const post_notificaciones_solicitudcancelacion = async (request, response) => {
     const body = request.body;
@@ -43,6 +46,7 @@ const post_notificaciones_solicitudcancelacion = async (request, response) => {
         // ENVIAMOS EL CORREO ELECTRONICO CON LOS DATOS OBTENIDOS
         for (const element of data) {
             await mail_cancelacionCotizacion(element);
+            await delay(5000); 
         }
 
     } catch (error) {
@@ -81,6 +85,7 @@ const post_notificacion_solicitudautorizacion = async (request, response) => {
         // ENVIAMOS EL CORREO ELECTRONICO CON LOS DATOS OBTENIDOS
         for (const element of data) {
             await mail_solicitudAutorizacion(element);
+            await delay(5000); 
         }
 
     } catch (error) {
@@ -109,7 +114,7 @@ const post_notificaciones = async (request, response) => {
         });
 
         await enviarCorreo(body);
-
+        await delay(5000); 
         // // ENVIAMOS EL CORREO ELECTRONICO CON LOS DATOS OBTENIDOS
         // for (const element of data) {
         //     await mail_solicitudAutorizacion(element);
@@ -139,6 +144,7 @@ const post_notificaciones_reporte_bancos = async (request, response) => {
         // ENVIAMOS EL CORREO ELECTRONICO CON LOS DATOS OBTENIDOS
         for (const element of _correos) {
             await mail_enviar_reportebancos({ correo: element.email, bancos: _reportebancos });
+            await delay(5000); 
         }
 
     } catch (error) {
