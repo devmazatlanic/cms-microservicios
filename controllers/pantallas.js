@@ -1,4 +1,4 @@
-const { getPantallabyId, getPantallabyToken, createPantalla, getPlaylisPantallabyToken } = require('../models/pantallas');
+const { getPantallabyId, getPantallabyToken, createPantalla, getPlaylisPantallabyToken, getDefaultPlaylist } = require('../models/pantallas');
 const { get_mac_address } = require('../helpers/tools');
 const macaddress = require('macaddress');
 
@@ -41,7 +41,6 @@ const get_pantalla_by_token = async (request, response) => {
     }
 
     try {
-        // OBTENEMOS LA PANTALLA DESDE LA BASE DE DATOS
         const pantalla = await getPantallabyToken(token);
         if (!pantalla) {
             return response.status(404).json({
@@ -49,14 +48,12 @@ const get_pantalla_by_token = async (request, response) => {
             });
         }
 
-        // ENVIAMOS LA RESPUESTA JSON CON LOS DATOS EXTRAIDOS
         response.json({
             message: 'GET API - PANTALLAS',
             pantalla: pantalla
         });
 
     } catch (error) {
-        // Pasamos solo el mensaje de error a Error
         return response.status(500).json({
             message: `No se encontró la pantalla: ${error.message}`
         });
@@ -118,32 +115,48 @@ const socket_pantalla = async (_data = {}) => {
             let { token } = _response;
             console.log('MENSAJE RECIBIDO:', _response);
 
-            const encontrarPantalla = await getPantallabyToken(token);
-            console.log(encontrarPantalla);
-            // VALIDAMOS QUE EXISTA LA PANTALLA, EN CASO DE QUE NO, LA REGISTRAMOS DE MANERA AUTOMATICA
-            if (encontrarPantalla.length > 0) {
-                // AHORA BUSCAMOS UNA LISTA DE REPRODUCCION CARGADA A LA PANTALLA
-                const contenidoPantalla = await getPlaylisPantallabyToken(token);
-                if (contenidoPantalla.length !== 0) {
-                    _return.playlist = contenidoPantalla;
-                    _return.next = true;
-                    _return.message = "SE ENCONTRO UNA PLAYLIST ASOCIADA A LA PANTALLA CON EL TOKEN :" + token + " EXITOSAMENTE.";
+            try {
+                const encontrarPantalla = await getPantallabyToken(token);
+                if (encontrarPantalla.length > 0) {
+                    // SI LA PANTALLA EXISTE, BUSCAMOS LA PLAYLIST ASOCIADA
+                    const contenidoPantalla = await getPlaylisPantallabyToken(token);
+                    if (contenidoPantalla.length > 0) {
+                        _return.playlist = contenidoPantalla;
+                        _return.next = true;
+                        _return.message = `SE ENCONTRO UNA PLAYLIST ASOCIADA A LA PANTALLA CON EL TOKEN: ${token} EXITOSAMENTE.`;
+                    } else {
+                        // SI NO HAY PLAYLIST ASOCIADA A LA PANTALLA, INTENTAMOS OBTNENER LA PLAYLIST DEFAULT
+                        const defaulPlaylist = await getDefaultPlaylist();
+                        if (defaulPlaylist.length > 0) {
+                            _return.playlist = defaulPlaylist;
+                            _return.next = true;
+                            _return.message = "SE ENCONTRÓ PLAYLIST DEFAULT";
+                        } else {
+                            _return.message = "NO SE ENCONTRO UNA PLAYLIST DEFAULT";
+                            _return.next = false;
+                        }
+                    }
+                } else {
+                    // SINO LA ENCUENTRA LA PANTALLA, QUIERE DECIR QUE NO EXISTE, ENTONCES LA REGISTRAMOS                   
+                    const _store_registro = await createPantalla({ 'token': token });
+                    if(_store_registro){  _return.message = `SE ACABA DE CREAR ESTA NUEVA PANTALLA: ${token} EXITOSAMENTE.`; }
                 }
-            } else {
-                //SINO SE ENCUENTRA, RESGISTRAMOS LA NUEVA PANTALLA/DISP CON ESA MAC ADDESS
-                const _store_registro = await createPantalla({
-                    'token': token
-                });
 
-                _return.message = "SE ACABA DE CREAR ESTA NUEVA PANTALLA " + token + " EXITOSAMENTE.";
+                // ENVIAMOS LA RESPUESTA AL CLIENTE
+                _socket.emit(_data.server, _return);
+
+            } catch (error) {
+                // MANEJO DE ERRORES
+                console.error('Error al procesar la solicitud:', error);
+                _return.message = 'Hubo un error al procesar la solicitud.';
+                _return.next = false;
+                _socket.emit(_data.server, _return);
             }
+        });
 
-            // ENVIAMOS RESPPUESTA A LA PANTALLA: EMIT
-            _socket.emit(_data.server, _return);
-
-            _socket.on('disconnect', () => {
-                console.log('Cliente desconectado:', clientId);
-            });
+        // EVENTO WEB SOCKET DESCONOXION DEL SOCKET
+        _socket.on('disconnect', () => {
+            console.log('Cliente desconectado:', clientId);
         });
     });
 };
