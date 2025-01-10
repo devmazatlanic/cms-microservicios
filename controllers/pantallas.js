@@ -41,7 +41,6 @@ const get_pantalla_by_token = async (request, response) => {
     }
 
     try {
-        // OBTENEMOS LA PANTALLA DESDE LA BASE DE DATOS
         const pantalla = await getPantallabyToken(token);
         if (!pantalla) {
             return response.status(404).json({
@@ -49,14 +48,12 @@ const get_pantalla_by_token = async (request, response) => {
             });
         }
 
-        // ENVIAMOS LA RESPUESTA JSON CON LOS DATOS EXTRAIDOS
         response.json({
             message: 'GET API - PANTALLAS',
             pantalla: pantalla
         });
 
     } catch (error) {
-        // Pasamos solo el mensaje de error a Error
         return response.status(500).json({
             message: `No se encontró la pantalla: ${error.message}`
         });
@@ -128,7 +125,7 @@ const socket_pantalla = async (_data = {}) => {
                         _return.next = true;
                         _return.message = `SE ENCONTRO UNA PLAYLIST ASOCIADA A LA PANTALLA CON EL TOKEN: ${token} EXITOSAMENTE.`;
                     } else {
-                        // SI NO HAY PLAYLIST, INTENTAMOS OBTNENER LA PLAYLIST DEFAULT
+                        // SI NO HAY PLAYLIST ASOCIADA A LA PANTALLA, INTENTAMOS OBTNENER LA PLAYLIST DEFAULT
                         const defaulPlaylist = await getDefaultPlaylist();
                         if (defaulPlaylist.length > 0) {
                             _return.playlist = defaulPlaylist;
@@ -140,8 +137,9 @@ const socket_pantalla = async (_data = {}) => {
                         }
                     }
                 } else {
-                    // SINO LA ENCUENTRA QUIERE DECIR QUE NO EXISTE, LA REGISTRAMOS                   const _store_registro = await createPantalla({ 'token': token });
-                    _return.message = `SE ACABA DE CREAR ESTA NUEVA PANTALLA: ${token} EXITOSAMENTE.`;
+                    // SINO LA ENCUENTRA LA PANTALLA, QUIERE DECIR QUE NO EXISTE, ENTONCES LA REGISTRAMOS                   
+                    const _store_registro = await createPantalla({ 'token': token });
+                    if(_store_registro){  _return.message = `SE ACABA DE CREAR ESTA NUEVA PANTALLA: ${token} EXITOSAMENTE.`; }
                 }
 
                 // ENVIAMOS LA RESPUESTA AL CLIENTE

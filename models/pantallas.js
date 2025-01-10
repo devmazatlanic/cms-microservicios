@@ -56,6 +56,7 @@ const getPlaylisPantallabyToken = async (token) => {
             let sql = `
                 SELECT 
                     DATE(sr.fecha_inicio) AS fecha_inicio,
+                    DATE(sr.fecha_fin) AS fecha_fin,
                     sp.nombre AS pantalla,
                     sp.token,
                     sp.host,
@@ -71,7 +72,9 @@ const getPlaylisPantallabyToken = async (token) => {
                 ) srd ON srd.id_reproduccion = sr.id
                 JOIN scr_pantallas sp ON sp.id = spr.id_pantalla
                 WHERE spr.status_alta = 1
-                AND sp.token  = ?`;
+                AND sr.fecha_inicio < CURRENT_DATE
+                AND sr.fecha_fin > CURRENT_DATE
+                AND sp.token = ?`;
 
             connection.query(sql, [token], (error, results) => {
                 if (error) {
@@ -85,7 +88,7 @@ const getPlaylisPantallabyToken = async (token) => {
         return queryResult;
 
     } catch (error) {
-        throw new Error('ERROR AL ENCONTRAR LA PANTALLA', error);
+        throw new Error('ERROR AL ENCONTRAR LA PANTALLA: ' + error.message);
     }
 }
 
