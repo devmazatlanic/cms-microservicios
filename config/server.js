@@ -2,27 +2,27 @@ const express = require('express');
 const cors = require('cors');
 const http = require('http');
 const io = require('socket.io');
-const local_cors = JSON.parse(process.env.LOCAL_CORS);
-const cors_config = JSON.parse(process.env.CORS_CONFIG);
+const api_cors = JSON.parse(process.env.API_CORS);
+const socket_cors = JSON.parse(process.env.SOCKET_CORS);
 
 class Server {
 
     constructor() {
-        const corsConfig = JSON.parse(process.env.CORS_CONFIG);
+        const corsConfig = JSON.parse(process.env.socket_cors);
         this.app = express();
         this.app.use(cors({
-            // origin: local_cors.origins,
+            // origin: api_cors.origins,
             methods: ['GET', 'POST'],
-            credentials: local_cors.allowCredentials
+            credentials: api_cors.allowCredentials
         }));
         this.port = process.env.PORT;
         this.server = http.createServer(this.app);
 
         this.io = io(this.server, {
             cors: {
-                origin: cors_config.origins,
+                origin: socket_cors.origins,
                 methods: ['GET', 'POST'],
-                credentials: cors_config.allowCredentials,
+                credentials: socket_cors.allowCredentials,
             }
         });
         // ROUTE PATHS
