@@ -83,13 +83,26 @@ class Server {
     }
 
     initSocket() {
-        const { socket_pantalla } = require('../controllers/pantallas');
+        const { socket_pantalla, socket_siteweb_local } = require('../controllers/pantallas');
+        const { sockeTConnect } = require('../helpers/sockets');
 
-        socket_pantalla({
+        sockeTConnect({
+            io: this.io,
+            client: ['airplay', 'siteweb'],
+            server: 'response'
+        });
+
+        /*socket_pantalla({
             io: this.io,
             client: 'data',
             server: 'response'
         });
+
+        socket_siteweb_local({
+            io: this.io,
+            client: 'data-siteweb',
+            server: 'response-siteweb'
+        });*/
 
     }
 
