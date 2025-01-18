@@ -72,8 +72,8 @@ const getPlaylisPantallabyToken = async (token) => {
                 ) srd ON srd.id_reproduccion = sr.id
                 JOIN scr_pantallas sp ON sp.id = spr.id_pantalla
                 WHERE spr.status_alta = 1
-                AND sr.fecha_inicio < CURRENT_DATE
-                AND sr.fecha_fin > CURRENT_DATE
+                -- AND sr.fecha_inicio < CURRENT_DATE
+                -- AND sr.fecha_fin > CURRENT_DATE
                 AND sp.token = ?`;
 
             connection.query(sql, [token], (error, results) => {
