@@ -21,7 +21,7 @@ const procesure_getDatosGeneralesEventosById = async (evento_id) => {
 const web_today = async () => {
     try {
         const query_result = await new Promise((resolve, reject) => {
-            const query = 'SELECT evento, DATE_FORMAT(fecha_inicio, "%d/%m/%Y") AS fecha, descripcion, image, salones FROM web_events WHERE status_alta = 1 AND DATE(NOW()) BETWEEN DATE(fecha_inicio) AND DATE(fecha_final) AND NOW() <= fecha_final ORDER BY fecha_inicio';
+            const query = 'SELECT evento, DATE_FORMAT(fecha_inicio, "%d/%m/%Y") fecha, descripcion, image, salones FROM web_events WHERE status_alta = 1 AND ((CURRENT_DATE() BETWEEN DATE(fecha_inicio) AND DATE(fecha_final)) OR (DATE(fecha_inicio) >= DATE_ADD(CURRENT_DATE(), INTERVAL 1 DAY))) AND (DATE(fecha_final) > CURRENT_DATE() OR (DATE(fecha_final) = CURRENT_DATE() AND TIME(fecha_final) > CURRENT_TIME())) ORDER BY fecha_inicio';
             connection.query(query, (error, results) => {
                 if (error) reject(error);
                 else resolve(results);
@@ -37,8 +37,7 @@ const web_today = async () => {
 const web_upcoming = async () => {
     try {
         const query_result = await new Promise((resolve, reject) => {
-            const query = 'SELECT evento, DATE_FORMAT(fecha_inicio, "%d/%m/%Y") fecha, descripcion, image, salones FROM web_events WHERE status_alta = 1 AND (CURRENT_DATE() BETWEEN DATE(fecha_inicio) AND DATE(fecha_final) OR DATE(fecha_inicio) >= DATE_ADD(CURRENT_DATE(), INTERVAL 1 DAY)) ORDER BY fecha_inicio';
-
+            const query = 'SELECT evento,DATE_FORMAT(fecha_inicio, "%d/%m/%Y") AS fecha, descripcion,image, salones FROM web_events WHERE status_alta = 1 AND ((CURRENT_DATE() BETWEEN DATE(fecha_inicio) AND DATE(fecha_final) AND TIME(fecha_final) > CURRENT_TIME()) OR DATE(fecha_inicio) >= DATE_ADD(CURRENT_DATE(), INTERVAL 1 DAY)) ORDER BY fecha_inicio';
             connection.query(query, (error, results) => {
                 if (error) reject(error);
                 else resolve(results);

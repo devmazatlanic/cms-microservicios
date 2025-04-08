@@ -10,13 +10,17 @@ const transporter = nodemailer.createTransport({
     port: 587, // 465: Puerto SMTP seguro
     secure: false, // true para usar SSL/TLS, false para SMTP no seguro
     auth: {
-        user: 'no-reply@mazatlaninternationalcenter.com', // Correo electrónico del remitente
-        pass: 'wpN;5xrJaY=T' // Contraseña del correo electrónico del remitente
+        user: 'noreply@mazatlaninternationalcenter.com', // Correo electrónico del remitente
+        pass: 'ZQjXE.(3BFsv' // Contraseña del correo electrónico del remitente
     },
     tls: {
         minVersion: 'TLSv1.2'      // Asegúrate de usar TLS 1.2 o superior
     },
-    debug: true // Activa los logs de depuración
+    debug: true, // Activa los logs de depuración
+    pool: true,
+    maxConnections: 5,    // Ajusta este número según lo permitido
+    maxMessages: 100,     // Cantidad de mensajes por conexión
+
 });
 
 // Función asíncrona para enviar el correo electrónico
