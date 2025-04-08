@@ -96,24 +96,15 @@ const getDefaultPlaylist = async () => {
     try {
         const queryResult = await new Promise((resolve, reject) => {
             let sql = `
-                SELECT 
-                    DATE(sr.fecha_inicio) AS fecha_inicio,
-                    sp.nombre AS pantalla,
-                    sp.token,
-                    sp.host,
-                    sp.token,
-                    sr.nombre AS reproduccion,
-                    srd.source
-                FROM scr_pantallas_reproducciones spr
-                JOIN (
-                    SELECT * FROM scr_reproducciones WHERE status_alta = 1
-                ) sr ON sr.id = spr.id_reproduccion
-                JOIN (
-                    SELECT * FROM scr_reproducciones_detalles WHERE status_alta = 1
-                ) srd ON srd.id_reproduccion = sr.id
-                JOIN scr_pantallas sp ON sp.id = spr.id_pantalla
-                WHERE spr.status_alta = 1
-                AND sr.default  = 1`;
+            SELECT
+                DATE(scr_rp.fecha_inicio) AS fecha_inicio,
+                scr_rp.nombre AS reproduccion,
+                scr_repd.source
+            FROM scr_reproducciones_detalles scr_repd
+            LEFT JOIN scr_reproducciones scr_rp
+            ON scr_rp.id = scr_repd.id_reproduccion 
+            WHERE scr_rp.default = 1 
+            AND scr_repd.status_alta = 1`;
 
             connection.query(sql, (error, results) => {
                 if (error) {
