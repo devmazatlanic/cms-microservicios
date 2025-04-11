@@ -4,21 +4,23 @@ const { request, response } = require('express');
 
 const verify_token = async (request, response) => {
     try {
-        let accessToken = "KAJSDHASKJDHKASJDHKAJSDHJKASDJK123102938129038190238";
-        let token = request.query["hub.verify_token"];
-        let challenge = request.query["hub.challenge"];
+        const VERIFY_TOKEN = "KAJSDHASKJDHKASJDHKAJSDHJKASDJK123102938129038190238";
+        const mode = request.query['hub.mode'];
+        const token = request.query['hub.verify_token'];
+        const challenge = request.query['hub.challenge'];
 
-        if (challenge != null && token != null && accessToken == token) {
-            response.json({
-                message: 'GET API - CONTROLLER wasdasd',
-                challenge: challenge
+        if (mode && token === VERIFY_TOKEN) {
+            console.log('WEBHOOK VERIFICADO POR META.');
+            response.status(200).json({
+                message: challenge
             });
         } else {
-            response.status(400).send();
+            console.warn('FALLO LA VERIFICACION DEL WEBHOOK.');
+            response.sendStatus(403);
         }
     } catch (error) {
         console.error('ERROR AL OBTENER LOS PERFILES: ', error);
-        response.status(400).json({ error: 'ERROR AL VERIFICAR TOKEN.' });
+        response.sendStatus(400).send();
     }
 };
 

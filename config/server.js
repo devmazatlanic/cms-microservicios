@@ -7,15 +7,10 @@ const io = require('socket.io');
 const api_cors = JSON.parse(process.env.API_CORS);
 const socket_cors = JSON.parse(process.env.SOCKET_CORS);
 
-// Configuración de certificados
-const options = {
-    key: fs.readFileSync('./certs/privkey.pem'),
-    cert: fs.readFileSync('./certs/fullchain.pem')
-};
-
 class Server {
 
     constructor() {
+        const certs = this.loadCerts();
         const corsConfig = JSON.parse(process.env.SOCKET_CORS);
         this.app = express();
         this.app.use(cors({
@@ -24,7 +19,9 @@ class Server {
             credentials: api_cors.allowCredentials
         }));
         this.port = process.env.PORT;
-        this.server = https.createServer(options, this.app);
+        this.server = certs
+            ? https.createServer(certs, this.app)
+            : http.createServer(this.app);
 
         this.io = io(this.server, {
             cors: {
@@ -46,6 +43,18 @@ class Server {
         this.middlewares();
         // ROUTES
         this.routes();
+    }
+
+    loadCerts() {
+        try {
+            return {
+                key: fs.readFileSync('./certs/privkey.pem'),
+                cert: fs.readFileSync('./certs/fullchain.pem')
+            };
+        } catch (err) {
+            console.warn('⚠️ Certificados no encontrados. Usando HTTP.');
+            return null;
+        }
     }
 
     middlewares() {
