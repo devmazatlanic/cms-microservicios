@@ -106,15 +106,16 @@ const post_notificaciones = async (request, response) => {
         });
     }
 
-    try {
+    try {      
+        await enviarCorreo(body);
+        // await delay(5000);
+        
         // ENVIAMOS LA RESPUESTA JSON CON LOS DATOS EXTRAIDOS
         response.status(200).json({
             next: true,
             message: 'SE ENVIO EL CORREO CON EXITO.'
         });
 
-        await enviarCorreo(body);
-        await delay(5000); 
         // // ENVIAMOS EL CORREO ELECTRONICO CON LOS DATOS OBTENIDOS
         // for (const element of data) {
         //     await mail_solicitudAutorizacion(element);

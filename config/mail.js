@@ -3,6 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const axios = require('axios');
 const { getLayoutTest, getSolicitudAutorizacion, getCancelacionCotizacion, getReciboIngreso, getReporteBancos, webContactUs, webReminderContactUs } = require('../config/plantillas');
+const { Console } = require('console');
 
 // Configuración del transporte SMTP
 const transporter = nodemailer.createTransport({
@@ -10,8 +11,8 @@ const transporter = nodemailer.createTransport({
     port: 587, // 465: Puerto SMTP seguro
     secure: false, // true para usar SSL/TLS, false para SMTP no seguro
     auth: {
-        user: 'noreply@mazatlaninternationalcenter.com', // Correo electrónico del remitente
-        pass: 'ZQjXE.(3BFsv' // Contraseña del correo electrónico del remitente
+        user: 'osmzt@mztmic.com', // Correo electrónico del remitente  user: 'info@mztmic.com'
+        pass: 'I0a!(_04v(EK' // Contraseña del correo electrónico del remitente pass: '[9DcNFo2{;_Z'
     },
     tls: {
         minVersion: 'TLSv1.2'      // Asegúrate de usar TLS 1.2 o superior
@@ -23,10 +24,19 @@ const transporter = nodemailer.createTransport({
 
 });
 
-// Función asíncrona para enviar el correo electrónico
-const enviarCorreo = async (datos) => {
+const isValidUrl = (string) => {
     try {
-        // Validar los campos requeridos
+        new URL(string);
+        return true;
+    } catch (_) {
+        return false;
+    }
+};
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const enviarCorreo = async (datos, intento = 1) => {
+    try {
         if (!datos.to || !datos.subject || !datos.body) {
             throw new Error('Faltan datos requeridos para enviar el correo (to, subject, body).');
         }
@@ -34,33 +44,31 @@ const enviarCorreo = async (datos) => {
         let attachmentConfig = [];
         let tempFilePath = "";
 
-        // Manejo de adjuntos
-        if (datos.attachments) {
+        // Manejo de adjuntos con validación
+        if (datos.attachments && isValidUrl(datos.attachments)) {
             const fileUrl = datos.attachments;
             const fileName = path.basename(fileUrl);
 
-            // Descargar el archivo
             const response = await axios.get(fileUrl, {
                 responseType: 'arraybuffer',
-                timeout: 30000 // 30 segundos
+                timeout: 30000
             });
 
             if (response.status !== 200) {
                 throw new Error(`Error al descargar el archivo: ${response.statusText}`);
             }
 
-            // Guardar el archivo en una ruta temporal
             tempFilePath = path.join(__dirname, fileName);
             fs.writeFileSync(tempFilePath, response.data);
 
-            // Configuración del adjunto
             attachmentConfig.push({
                 filename: fileName,
                 path: tempFilePath
             });
+        } else if (datos.attachments) {
+            console.warn("URL del adjunto no válida:", datos.attachments);
         }
 
-        // Configuración del correo
         const mailOptions = {
             from: 'no-reply@mazatlanic.com',
             to: datos.to,
@@ -70,21 +78,29 @@ const enviarCorreo = async (datos) => {
             attachments: attachmentConfig
         };
 
-        // Enviar el correo
+        console.log(`------------------------------------------------------------------`);
+        console.log(`ENVIANDO CORREO, ${mailOptions.subject}`);
         const info = await transporter.sendMail(mailOptions);
-        console.log('CORREO ENVIADO:', info.response);
+        console.log(`CORREO ENVIADO: ${info.response}`);
 
-        // Eliminar el archivo temporal
-        if (tempFilePath) {
-            await fs.promises.unlink(tempFilePath);
-            console.log('ARCHIVO TEMPORAL ELIMINADO.');
+        if(info.response != ""){
+            // ELIMINAMOS EL ARCHIVO ADJUNTO
+            if (tempFilePath) {
+                await fs.promises.unlink(tempFilePath);
+                console.log('ARCHIVO TEMPORAL ELIMINADO.');
+            }
         }
     } catch (error) {
-        console.error('Error al enviar el correo:', error.message);
+        if (error.message.includes('421') && intento <= 3) {
+            console.warn(`Intento ${intento} falló por límite SMTP. Reintentando en 5 segundos...`);
+            await sleep(5000);
+            return enviarCorreo(datos, intento + 1);
+        }
+
+        console.error('ERROR AL ENVIAR EL CORREO:', error.message);
         throw new Error(`ERROR AL ENVIAR EL CORREO: ${error.message}`);
     }
 };
-
 
 // Función asíncrona para enviar el correo electrónico
 const mail_solicitudAutorizacion = async (datos) => {

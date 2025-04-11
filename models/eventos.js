@@ -51,8 +51,9 @@ const web_upcoming = async () => {
 }
 
 const web_contactus = async (_data) => {
+    console.log(_data);
     try {
-        if (!_data.nombre || !_data.apellido_paterno || !_data.correo || !_data.celular) {
+        if (!_data.nombre || !_data.apellido_paterno || !_data.apellido_materno || !_data.correo || !_data.celular) {
             throw new Error('Faltan datos requeridos para insertar en la base de datos.');
         }
 
@@ -78,10 +79,9 @@ const web_contactus = async (_data) => {
         // REALIZANDO INSERT DEL CONTACTO
         const contactResult = await new Promise((resolve, reject) => {
             const sql = `
-                INSERT INTO tcr_lpcs (lpc_nombre, lpc_apellidoPaterno, lpc_correo, lpc_celular, cat_idModoContacto, cat_idMedioContacto)
-                VALUES (?, ?, ?, ?, ?, ?)`;
-
-            connection.query(sql, [_data.nombre, _data.apellido_paterno, _data.correo, _data.celular, 6, 5], (error, results) => {
+                INSERT INTO tcr_lpcs (lpc_nombre, lpc_apellidoPaterno, lpc_apellidoMaterno, lpc_correo, lpc_celular, cat_idModoContacto, cat_idMedioContacto)
+                VALUES (?, ?, ?, ?, ?, ?, ?)`;
+            connection.query(sql, [_data.nombre, _data.apellido_paterno, _data.apellido_materno, _data.correo, _data.celular, 6, 5], (error, results) => {
                 if (error) {
                     reject(new Error(`HUBO UN ERROR AL REGISTRAR SUS DATOS: ${error.message}`));
                 } else {
