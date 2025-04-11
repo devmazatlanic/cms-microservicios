@@ -8,7 +8,7 @@ const socket_cors = JSON.parse(process.env.SOCKET_CORS);
 class Server {
 
     constructor() {
-        const corsConfig = JSON.parse(process.env.socket_cors);
+        const corsConfig = JSON.parse(process.env.SOCKET_CORS);
         this.app = express();
         this.app.use(cors({
             // origin: api_cors.origins,
@@ -25,6 +25,7 @@ class Server {
                 credentials: socket_cors.allowCredentials,
             }
         });
+
         // ROUTE PATHS
         this.perfiles_path = '/api/perfiles';
         this.notificaciones_path = '/api/notificaciones';
@@ -32,6 +33,7 @@ class Server {
         this.rfid_path = '/api/hware';
         this.pantallas_path = '/api/pantallas';
         this.web_path = '/api/web';
+        this.whatsapp_path = '/api/whatsapp';
         // MIDDLEWARES
         this.middlewares();
         // ROUTES
@@ -59,19 +61,19 @@ class Server {
         //     req.clientIp = clientIp;
         //     next();
         // });
-    
-        
+
+
 
         this.app.get('/ipdevice', async (req, res) => {
-            const ip = 
-            req.headers['cf-connecting-ip'] ||  
-            req.headers['x-real-ip'] ||
-            req.headers['x-forwarded-for'] ||
-            req.socket.remoteAddress || '';
-                console.log(ip);
-                res.send(`Client IP: ${ip}`);
-            });
-        }
+            const ip =
+                req.headers['cf-connecting-ip'] ||
+                req.headers['x-real-ip'] ||
+                req.headers['x-forwarded-for'] ||
+                req.socket.remoteAddress || '';
+            console.log(ip);
+            res.send(`Client IP: ${ip}`);
+        });
+    }
 
     routes() {
         this.app.use(this.perfiles_path, require('../routes/perfiles'));
@@ -80,6 +82,7 @@ class Server {
         this.app.use(this.rfid_path, require('../routes/rfid'));
         this.app.use(this.pantallas_path, require('../routes/pantallas'));
         this.app.use(this.web_path, require('../routes/web'));
+        this.app.use(this.whatsapp_path, require('../routes/whatsapp'));
     }
 
     initSocket() {
