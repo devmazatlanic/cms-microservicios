@@ -1,9 +1,17 @@
 const express = require('express');
+const fs = require('fs');
 const cors = require('cors');
 const http = require('http');
+const https = require('https');
 const io = require('socket.io');
 const api_cors = JSON.parse(process.env.API_CORS);
 const socket_cors = JSON.parse(process.env.SOCKET_CORS);
+
+// Configuración de certificados
+const options = {
+    key: fs.readFileSync('./certs/privkey.pem'),
+    cert: fs.readFileSync('./certs/fullchain.pem')
+};
 
 class Server {
 
@@ -16,7 +24,7 @@ class Server {
             credentials: api_cors.allowCredentials
         }));
         this.port = process.env.PORT;
-        this.server = http.createServer(this.app);
+        this.server = https.createServer(options, this.app);
 
         this.io = io(this.server, {
             cors: {
