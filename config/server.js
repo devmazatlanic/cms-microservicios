@@ -19,9 +19,10 @@ class Server {
             credentials: api_cors.allowCredentials
         }));
         this.port = process.env.PORT;
-        this.server = certs
-            ? https.createServer(certs, this.app)
-            : http.createServer(this.app);
+        // this.server = certs
+        //    ? https.createServer(certs, this.app)
+        //    : http.createServer(this.app);
+        this.server = http.createServer(this.app);
 
         this.io = io(this.server, {
             cors: {

@@ -18,6 +18,17 @@ const get_mac_address = async () => {
     }
 };
 
+const buildComponent = (type = "body", texts = []) => {
+    return {
+        type,
+        parameters: texts.map(text => ({
+            type: "text",
+            text
+        }))
+    };
+};
+
 module.exports = {
-    get_mac_address
+    get_mac_address,
+    buildComponent
 }

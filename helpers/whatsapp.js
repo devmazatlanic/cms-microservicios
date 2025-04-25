@@ -1,29 +1,39 @@
-const https = require("https");
+const http = require("https");
 
 const send_message = (_model) => {
+    // const _payload = JSON.stringify(_model);
+    const _payload = _model;
 
     const _options = {
         host: "graph.facebook.com",
-        path: "/v22.0/634731639721148/messages",
+        path: "/v22.0/654524481067952/messages",
         method: "POST",
-        body: _model,
+        port:     443,
+        // body: _payload,
         headers: {
             "Content-Type": "application/json",
-            Authorization: "Bearer EAAOYc8XIEcIBOzKBsiheJky5YGwzFq75aCWMOEsyyrZCjNiZA2ZBTl8ZB2pKYuXeGjNDYGZAQC5J1xZCOZAwr66h0z3ngmj3OZB6VIwCXpTVey5CXUNE0f9tBSs9h1qWqX5Ge6ZCHydfCetrj5zZCxBdfIjPZAuZA08WqXVZAdUq8JroiPjD3s7ZC4tS1M6dR1N1dna7rC9wZDZD"
+            Authorization: "Bearer EAAOYc8XIEcIBO84xzupaaWNtvDdqUNTw8y785guUMATn1LuQEeaqMaEXzuizYLUotZB1LHCIhgdVRu7hMZBbMGJLpkkdvkKaZCrVTCg3OcWjchFNz8c1uleUpxLKLm1ZCZCbzGpZCy0H6Yxnz15J94OlBIeDdj9fhecKlFZAQLXQQBWhLXlZAI2vRuhEiHfFZCVa8swZDZD",
+            'Content-Length': Buffer.byteLength(_payload)
         }
     };
 
-    const request = https.request(_options, response => {
-        response.on("data", d => {
-            process.stdout.write(d);
-        })
+    const request = http.request(_options, response => {
+        let data = '';
+        // Opcional: loguea el status
+        console.log('Status code:', response.statusCode);
+
+        response.on('data', (chunk) => data += chunk);
+        response.on('end', () => {
+            console.log('Respuesta WhatsApp:', data);
+            // ESTA RESPUESTA ES LA QUE ALMACENAREMOS EN BASE DE DATOS
+        });
     });
 
     request.on("error", error => {
-        console.error(error);
+        console.error("Error al enviar mensaje:", error);
     });
 
-    request.write(_model);
+    request.write(_payload);
     request.end();
 }
 
