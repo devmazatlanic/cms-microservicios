@@ -1,4 +1,5 @@
 const http = require("https");
+const { store_request } = require('../models/whatsapp');
 
 const send_message = (_model) => {
     // const _payload = JSON.stringify(_model);
@@ -23,9 +24,23 @@ const send_message = (_model) => {
         console.log('Status code:', response.statusCode);
 
         response.on('data', (chunk) => data += chunk);
-        response.on('end', () => {
+        response.on('end', () => { 
             console.log('Respuesta WhatsApp:', data);
+            let _response = JSON.parse(data);
+            let _payload_response = JSON.parse(_payload);
             // ESTA RESPUESTA ES LA QUE ALMACENAREMOS EN BASE DE DATOS
+
+            store_request({
+                phone_number: _payload_response.to,
+                type: _payload_response.type,
+                name: _payload_response.template?.name || null,
+                id_message: _response?.messages?.[0]?.id || null, 
+                message_status: _response?.messages?.[0]?.message_status || null,
+                url: _payload_response?.url || null,
+                filename: _payload_response?.filename || null,
+                caption: _payload_response?.caption || null,
+                model: JSON.parse(_payload)
+            });
         });
     });
 

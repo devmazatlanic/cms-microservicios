@@ -1,8 +1,7 @@
 const { request, response } = require('express');
 const { send_message } = require('../helpers/whatsapp');
 const { message_text, message_document, message_templete } = require("../shared/whatsapp/custom_message");
-const { buildComponent } = require("../helpers/tools");
-// const { getPerfiles } = require('../models/perfiles');
+const { buildComponent, process_response } = require("../helpers/tools");
 
 const verify_token = (request, response) => {
     const VERIFY_TOKEN = "miclave123"; // mismo que pusiste en Meta
@@ -17,38 +16,27 @@ const verify_token = (request, response) => {
     }
 };
 
-const received_message = (request, response) => {
+const received_message = async (request, response) => {
     const body = request.body;
     // console.log("Mensaje recibido de Meta:", body.entry[0].changes[0].value.statuses[0]);
 
     try{
-        let _entry = body['entry'][0];
-        let _changes = _entry['changes'][0];
-        let _value = _changes['value'];
-        let _messageObject = _value['messages'];
+        const _entry = body?.entry?.[0];
+        const _changes = _entry?.changes?.[0];
+        const _value = _changes?.value;
+        const _messageObject = _value?.messages;
 
-        if(typeof _messageObject != "undefined"){
+        if(Array.isArray(_messageObject)){
             let _messages = _messageObject[0];
-            let _text = GetTextUser(_messages);
-            let _from = _messages.from;
-            let _id_context = _messages.context.id;
+            // FUNCION DONDE REALIZAMOS EL PROCEDIMIENTO PARA ENVIAR LA RESPUESTA
+            let _model = await process_response(_messages);
 
-            // console.log("Mensaje recibido de Meta:", body.entry[0].changes[0].value.messages[0]);
-            console.log('_from: ', _from);
-            console.log('_text: ', _text);
-            console.log('_id_context: ', _id_context);
-
-            // VALIDAMOS EL TIPO DE RESPUESTA
-            // NECESIDADES: SABER QUE TIPO DE DOCUMENTO ES O VER EL IDENTIFICADOR
-            switch (_text) {
-                case 'Si':
-                    let _model = message_document({
-                        number: _from,
-                        url: 'http://cdn.mztmic.com:8000/ordenes_servicios/01_AGOSTO_CEREMONIA_AYAHUASCA_20200724165530.pdf'
-                    }); 
-
-                    send_message(_model);
-                    break;
+            // ENVIAMOS EL MODELO DE DATO
+            if (Object.keys(_model).length > 0) {
+                console.log('Enviando mensaje:', _model);
+                await send_message(_model);
+            } else {
+                console.log('No hay mensaje para enviar.');
             }
         }
 
@@ -58,45 +46,7 @@ const received_message = (request, response) => {
     }
 }
 
-const GetTextUser = (_message) => {
-    let _text = '';
-    let _typeMessage = _message['type'];
 
-    switch (_typeMessage) {
-        case 'text':
-            _text = _message['text']['body'];
-            break;
-        
-        case 'button':
-            _text = _message['button'].text;
-            break;
-        
-        case 'interactive':
-            let _interactiveObject = _message['interactive'];
-            let _interactiveType = _interactive['type'];
-
-            switch (_interactiveType) {
-                case 'button_reply':
-                    _text = _interactiveObject['button_reply']['title'];
-                    break;
-
-                case 'list_reply':
-                    _text = _interactiveObject['list_reply']['title'];
-                    break;
-            
-                default:
-                    console.log('_interactiveObject: ', _interactiveObject);
-                    break;
-            }
-            break;
-    
-        default:
-            console.log('_message: ', _message);
-            break;
-    }
-
-    return _text;
-}
 
 const send_notification = (request, response) => {
     try {
@@ -149,7 +99,10 @@ const send_notification = (request, response) => {
                 let _config = {
                     number: body.phone_number,
                     name: body.name,
-                    language_code: 'es'
+                    language_code: 'es',
+                    url: body?.url || null,
+                    filename: body?.filename || null,
+                    caption: body?.caption || null
                 };
 
                 // Si vienen parámetros para el body…
@@ -161,7 +114,6 @@ const send_notification = (request, response) => {
                 }
                 
                 _model = message_templete(_config);
-
                 break;
         
             default:

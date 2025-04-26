@@ -1,7 +1,7 @@
 const { template } = require("handlebars");
 
 const message_text = (_data = { number: "",  message: ""}) => {
-    const _model = JSON.stringify({
+    let _config = {
         "messaging_product": "whatsapp",
         "recipient_type": "individual",
         "type": "text",
@@ -9,7 +9,9 @@ const message_text = (_data = { number: "",  message: ""}) => {
         "text": {
             "body": _data.message
         }
-    });
+    };
+
+    const _model = JSON.stringify(_config);
 
     return _model;
 }
@@ -56,17 +58,19 @@ const message_video = (_data = { number: "", url: ""}) => {
     return _model;
 }
 
-const message_document = (_data = { number: "", url: ""}) => {
+const message_document = (_data = { number: "", url: "", filename: "", caption: ""}) => {
     let _config = {
         "messaging_product": "whatsapp",
         "recipient_type": "individual",
         "type": "document",
         "to": _data.number,
         "document": {
-            "link": _data.url
+            "link": _data.url,
+            "filename": _data.filename,
+            "caption": _data.caption
         }
     };
-    
+
     const _model = JSON.stringify(_config);
 
     return _model;
@@ -89,7 +93,7 @@ const message_location = (_data = { number: "", url: ""}) => {
     return _model;
 }
 
-const message_templete = (_data = { number: "", name: "", language_code:  "", components: []}) => {
+const message_templete = (_data = { number: "", name: "", language_code:  "", components: [], url: "", filename: "", caption: ""}) => {
     let _config = {
         messaging_product: "whatsapp",
         to: _data.number,
@@ -102,9 +106,20 @@ const message_templete = (_data = { number: "", name: "", language_code:  "", co
         }
     };
 
-    // Si se mandan componentes (body, header, footer, etc.)
     if (_data.components && _data.components.length > 0) {
         _config.template.components = _data.components;
+    }
+
+    if (_data.url && _data.url.length > 0) {
+        _config.url = _data.url;
+    }
+
+    if (_data.filename && _data.filename.length > 0) {
+        _config.filename = _data.filename;
+    }
+
+    if (_data.caption && _data.caption.length > 0) {
+        _config.caption = _data.caption;
     }
 
     const _model = JSON.stringify(_config);
