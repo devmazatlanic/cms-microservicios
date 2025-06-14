@@ -1,6 +1,6 @@
 const { template } = require("handlebars");
 
-const message_text = (_data = { number: "",  message: ""}) => {
+const message_text = (_data = { number: "", message: "" }) => {
     let _config = {
         "messaging_product": "whatsapp",
         "recipient_type": "individual",
@@ -16,7 +16,7 @@ const message_text = (_data = { number: "",  message: ""}) => {
     return _model;
 }
 
-const message_image = (_data = { number: "", url: ""}) => {
+const message_image = (_data = { number: "", url: "" }) => {
     const _model = JSON.stringify({
         "messaging_product": "whatsapp",
         "recipient_type": "individual",
@@ -30,7 +30,7 @@ const message_image = (_data = { number: "", url: ""}) => {
     return _model;
 }
 
-const message_audio = (_data = { number: "", url: ""}) => {
+const message_audio = (_data = { number: "", url: "" }) => {
     const _model = JSON.stringify({
         "messaging_product": "whatsapp",
         "recipient_type": "individual",
@@ -44,7 +44,7 @@ const message_audio = (_data = { number: "", url: ""}) => {
     return _model;
 }
 
-const message_video = (_data = { number: "", url: ""}) => {
+const message_video = (_data = { number: "", url: "" }) => {
     const _model = JSON.stringify({
         "messaging_product": "whatsapp",
         "recipient_type": "individual",
@@ -58,7 +58,7 @@ const message_video = (_data = { number: "", url: ""}) => {
     return _model;
 }
 
-const message_document = (_data = { number: "", url: "", filename: "", caption: ""}) => {
+const message_document = (_data = { number: "", url: "", filename: "", caption: "" }) => {
     let _config = {
         "messaging_product": "whatsapp",
         "recipient_type": "individual",
@@ -76,7 +76,7 @@ const message_document = (_data = { number: "", url: "", filename: "", caption: 
     return _model;
 }
 
-const message_location = (_data = { number: "", url: ""}) => {
+const message_location = (_data = { number: "", url: "" }) => {
     const _model = JSON.stringify({
         "messaging_product": "whatsapp",
         "recipient_type": "individual",
@@ -85,7 +85,7 @@ const message_location = (_data = { number: "", url: ""}) => {
         "location": {
             "latitude": _data.latitude,
             "longitude": _data.longitude,
-            "name":_data.name,
+            "name": _data.name,
             "address": _data.address
         }
     });
@@ -93,7 +93,7 @@ const message_location = (_data = { number: "", url: ""}) => {
     return _model;
 }
 
-const message_templete = (_data = { number: "", name: "", language_code:  "", components: [], url: "", filename: "", caption: ""}) => {
+const message_templete = (_data = { number: "", name: "", language_code: "", components: [], url: "", filename: "", caption: "" }) => {
     let _config = {
         messaging_product: "whatsapp",
         to: _data.number,

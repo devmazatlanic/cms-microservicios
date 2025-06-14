@@ -20,13 +20,13 @@ const received_message = async (request, response) => {
     const body = request.body;
     // console.log("Mensaje recibido de Meta:", body.entry[0].changes[0].value.statuses[0]);
 
-    try{
+    try {
         const _entry = body?.entry?.[0];
         const _changes = _entry?.changes?.[0];
         const _value = _changes?.value;
         const _messageObject = _value?.messages;
 
-        if(Array.isArray(_messageObject)){
+        if (Array.isArray(_messageObject)) {
             let _messages = _messageObject[0];
             // FUNCION DONDE REALIZAMOS EL PROCEDIMIENTO PARA ENVIAR LA RESPUESTA
             let _model = await process_response(_messages);
@@ -41,7 +41,7 @@ const received_message = async (request, response) => {
         }
 
         response.sendStatus(200);
-    }catch(error){
+    } catch (error) {
         response.sendStatus(400);
     }
 }
@@ -54,16 +54,16 @@ const send_notification = (request, response) => {
         // console.log('send_notification: ', body);
         let _model = {};
 
-        if(!body.type?.trim() || !body.phone_number?.trim()){
+        if (!body.type?.trim() || !body.phone_number?.trim()) {
             return response.status(400).json({
                 next: false,
                 message: 'Los campos obligatorios son los siguientes y no deben de estar vacios: type, phone_number.'
             });
         }
-        
+
         switch (body.type) {
             case "document":
-                if(!body.url?.trim()){
+                if (!body.url?.trim()) {
                     return response.status(400).json({
                         next: false,
                         message: 'El campo url es obligatorio y no debe de estar vacio.'
@@ -77,25 +77,7 @@ const send_notification = (request, response) => {
                 break;
 
             case "template":
-                if(!body.name?.trim()){
-                    return response.status(400).json({
-                        next: false,
-                        message: 'El campo name es obligatorio y no debe de estar vacio.'
-                    });
-                }
-                
-                // CONDICIONES PARA SABER QUE PLANTILLA ES
-                switch (body.name) {
-                    case 'ordenservicio':
-                        if (!Array.isArray(body.components) || body.components.length === 0) {
-                            return response.status(400).json({
-                              next:    false,
-                              message: 'El campo components es obligatorio y debe ser un arreglo con al menos un elemento.'
-                            });
-                        }
-                        break;
-                }
-
+                // CREANDO CONFIGURACION
                 let _config = {
                     number: body.phone_number,
                     name: body.name,
@@ -105,6 +87,26 @@ const send_notification = (request, response) => {
                     caption: body?.caption || null
                 };
 
+                if (!body.name?.trim()) {
+                    return response.status(400).json({
+                        next: false,
+                        message: 'El campo name es obligatorio y no debe de estar vacio.'
+                    });
+                }
+
+                // CONDICIONES PARA SABER QUE PLANTILLA ES
+                switch (body.name) {
+                    case 'ordenservicio':
+                    case 'notify_autorizacion_personal':
+                        if (!Array.isArray(body.components) || body.components.length === 0) {
+                            return response.status(400).json({
+                                next: false,
+                                message: 'El campo components es obligatorio y debe ser un arreglo con al menos un elemento.'
+                            });
+                        }
+                        break;
+                }
+
                 // Si vienen parámetros para el body…
                 if (Array.isArray(body.components) && body.components.length > 0) {
                     // envuelve el resultado en un array
@@ -112,12 +114,12 @@ const send_notification = (request, response) => {
                         buildComponent("body", body.components)
                     ];
                 }
-                
+
                 _model = message_templete(_config);
                 break;
-        
+
             default:
-                if(!body.message?.trim()){
+                if (!body.message?.trim()) {
                     return response.status(400).json({
                         next: false,
                         message: 'El campo message es obligatorio y no debe de estar vacio.'
