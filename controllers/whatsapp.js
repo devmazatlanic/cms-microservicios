@@ -98,6 +98,7 @@ const send_notification = (request, response) => {
                 switch (body.name) {
                     case 'ordenservicio':
                     case 'notify_autorizacion_personal':
+                    case 'notify_solicitud_personal':
                         if (!Array.isArray(body.components) || body.components.length === 0) {
                             return response.status(400).json({
                                 next: false,
