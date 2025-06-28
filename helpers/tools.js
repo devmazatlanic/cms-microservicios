@@ -34,7 +34,7 @@ const buildComponent = (type = "body", texts = []) => {
     };
 };
 
-const process_response = async(_message) => {
+const process_response = async (_message) => {
     let _text = GetTextUser(_message);
     let _from = _message.from;
     let _id_context = _message.context?.id;
@@ -47,7 +47,7 @@ const process_response = async(_message) => {
     // console.log("Mensaje recibido de Meta:", body.entry[0].changes[0].value.messages[0]);
 
     // VALIDAMOS EL TIPO DE RESPUESTA Y PARA ESO, BUSCAMOS QUE EL ID CONTEXT EXISTA EN LA BASE DE DATOS: WHATSAPP_REQUETS
-    if(_id_context){
+    if (_id_context) {
         const _result = await get_message(_id_context);
         console.log('📦 Contexto obtenido:', _result[0]);
 
@@ -70,6 +70,7 @@ const process_response = async(_message) => {
             // AHORA VALIDAMOS EL NOMBRE DE LA PLANTILLA QUE SE ESTA UTILIZANDO
             switch (_name) {
                 case 'ordenservicio':
+                case 'ordenservicio_reenvio':
                     // LA PLANTILLA CUENTA CON BOTONES: SI
                     switch (_text.toUpperCase()) {
                         case 'SI':
@@ -81,7 +82,7 @@ const process_response = async(_message) => {
                                 caption: _caption
                             });
                             break;
-                        
+
                         default:
                             _model = message_text({
                                 number: _from,
@@ -90,13 +91,13 @@ const process_response = async(_message) => {
                             break;
                     }
                     break;
-            
+
                 default:
                     console.log('Template no controlado:', _name);
                     break;
-            }                    
+            }
             break;
-    
+
         default:
             console.log('Tipo no controlado:', _type);
             break;
@@ -113,11 +114,11 @@ const GetTextUser = (_message) => {
         case 'text':
             _text = _message['text']['body'];
             break;
-        
+
         case 'button':
             _text = _message['button'].text;
             break;
-        
+
         case 'interactive':
             let _interactiveObject = _message['interactive'];
             let _interactiveType = _interactive['type'];
@@ -130,13 +131,13 @@ const GetTextUser = (_message) => {
                 case 'list_reply':
                     _text = _interactiveObject['list_reply']['title'];
                     break;
-            
+
                 default:
                     console.log('_interactiveObject: ', _interactiveObject);
                     break;
             }
             break;
-    
+
         default:
             console.log('_message: ', _message);
             break;

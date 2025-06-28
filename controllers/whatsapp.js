@@ -100,6 +100,7 @@ const send_notification = (request, response) => {
                     case 'notify_autorizacion_personal':
                     case 'notify_solicitud_personal':
                     case 'notify_solicitud_personal_seguridad':
+                    case 'ordenservicio_reenvio':
                         if (!Array.isArray(body.components) || body.components.length === 0) {
                             return response.status(400).json({
                                 next: false,
