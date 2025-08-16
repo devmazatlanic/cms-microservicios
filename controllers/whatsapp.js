@@ -108,14 +108,28 @@ const send_notification = (request, response) => {
                             });
                         }
                         break;
+                    case 'notify_asignaciones_personal':
+                        const faltaComponents = !Array.isArray(body.components) || body.components.length === 0;
+                        const faltaHeaders = !Array.isArray(body.headers) || body.headers.length === 0;
+
+                        if (faltaComponents || faltaHeaders) {
+                            return response.status(400).json({
+                                next: false,
+                                message: 'El campo components y headers es obligatorio y debe ser un arreglo con al menos un elemento.'
+                            });
+                        }
+                        break;
                 }
 
+                _config.components = [];
                 // Si vienen parámetros para el body…
+                if (Array.isArray(body.headers) && body.headers.length > 0) {
+                    _config.components.push(buildComponent("header", body.headers));
+                }
+
                 if (Array.isArray(body.components) && body.components.length > 0) {
                     // envuelve el resultado en un array
-                    _config.components = [
-                        buildComponent("body", body.components)
-                    ];
+                    _config.components.push(buildComponent("body", body.components));
                 }
 
                 _model = message_templete(_config);
