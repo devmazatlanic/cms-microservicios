@@ -101,6 +101,7 @@ const send_notification = (request, response) => {
                     case 'notify_solicitud_personal':
                     case 'notify_solicitud_personal_seguridad':
                     case 'ordenservicio_reenvio':
+                    case 'notify_cierre_evento':
                         if (!Array.isArray(body.components) || body.components.length === 0) {
                             return response.status(400).json({
                                 next: false,
@@ -119,6 +120,14 @@ const send_notification = (request, response) => {
                             });
                         }
                         break;
+                    case 'notify_ordenservicio':
+                        if ((!Array.isArray(body.components) || body.components.length === 0) || (!body.filename?.trim())) {
+                            return response.status(400).json({
+                                next: false,
+                                message: 'El campo components y filename es obligatorio y debe ser un arreglo con al menos un elemento.'
+                            });
+                        }
+                        break;
                 }
 
                 _config.components = [];
@@ -130,6 +139,23 @@ const send_notification = (request, response) => {
                 if (Array.isArray(body.components) && body.components.length > 0) {
                     // envuelve el resultado en un array
                     _config.components.push(buildComponent("body", body.components));
+                }
+
+                if (body.filename && typeof body.filename === 'string' && body.filename.trim().length > 0) {
+                    const baseUrl = 'http://cdn.mztmic.com:8000/';
+                    const fullUrl = `${baseUrl}${body.filename.trim()}`;
+                    // envuelve el resultado en un array
+                    _config.components.push({
+                        type: 'button',
+                        sub_type: 'url',
+                        index: 0,
+                        parameters: [
+                            {
+                                type: 'text',
+                                text: body.filename
+                            }
+                        ]
+                    });
                 }
 
                 _model = message_templete(_config);
