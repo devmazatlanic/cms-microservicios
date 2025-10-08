@@ -21,7 +21,7 @@ const procesure_getDatosGeneralesEventosById = async (evento_id) => {
 const web_today = async () => {
     try {
         const query_result = await new Promise((resolve, reject) => {
-            const query = 'SELECT evento, DATE_FORMAT(fecha_inicio, "%d/%m/%Y") fecha, descripcion, image, salones FROM web_events WHERE status_alta = 1 AND ((CURRENT_DATE() BETWEEN DATE(fecha_inicio) AND DATE(fecha_final)) OR (DATE(fecha_inicio) >= DATE_ADD(CURRENT_DATE(), INTERVAL 1 DAY))) AND (DATE(fecha_final) > CURRENT_DATE() OR (DATE(fecha_final) = CURRENT_DATE() AND TIME(fecha_final) > CURRENT_TIME())) ORDER BY fecha_inicio';
+            const query = 'SELECT evento, DATE_FORMAT(fecha_inicio, "%d/%m/%Y") AS fecha, fecha_inicio, fecha_final, descripcion, image, salones FROM web_events WHERE status_alta = 1 AND CURRENT_DATE() BETWEEN DATE(fecha_inicio) AND DATE(fecha_final) ORDER BY fecha_inicio';
             connection.query(query, (error, results) => {
                 if (error) reject(error);
                 else resolve(results);
@@ -81,7 +81,7 @@ const web_contactus = async (_data) => {
             const sql = `
                 INSERT INTO tcr_lpcs (lpc_nombre, lpc_apellidoPaterno, lpc_apellidoMaterno, lpc_correo, lpc_celular, cat_idModoContacto, cat_idMedioContacto)
                 VALUES (?, ?, ?, ?, ?, ?, ?)`;
-            connection.query(sql, [_data.nombre, _data.apellido_paterno, _data.apellido_materno, _data.correo, _data.celular, 6, 5], (error, results) => {
+            connection.query(sql, [_data.nombre, _data.apellido_paterno, _data.apellido_materno, _data.correo, _data.celular, _data.tipo, 5], (error, results) => {
                 if (error) {
                     reject(new Error(`HUBO UN ERROR AL REGISTRAR SUS DATOS: ${error.message}`));
                 } else {
