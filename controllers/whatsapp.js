@@ -141,18 +141,22 @@ const send_notification = (request, response) => {
                     _config.components.push(buildComponent("body", body.components));
                 }
 
-                if (body.filename && typeof body.filename === 'string' && body.filename.trim().length > 0) {
-                    _config.components.push({
-                        type: 'button',
-                        sub_type: 'url',
-                        index: 0,
-                        parameters: [
-                            {
-                                type: 'text',
-                                text: body.filename
-                            }
-                        ]
-                    });
+                switch (body.name) {
+                    case 'notify_ordenservicio':
+                        if (body.filename && typeof body.filename === 'string' && body.filename.trim().length > 0) {
+                            _config.components.push({
+                                type: 'button',
+                                sub_type: 'url',
+                                index: 0,
+                                parameters: [
+                                    {
+                                        type: 'text',
+                                        text: body.filename
+                                    }
+                                ]
+                            });
+                        }
+                        break;
                 }
 
                 _model = message_templete(_config);
