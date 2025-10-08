@@ -142,9 +142,6 @@ const send_notification = (request, response) => {
                 }
 
                 if (body.filename && typeof body.filename === 'string' && body.filename.trim().length > 0) {
-                    const baseUrl = 'http://cdn.mztmic.com:8000/';
-                    const fullUrl = `${baseUrl}${body.filename.trim()}`;
-                    // envuelve el resultado en un array
                     _config.components.push({
                         type: 'button',
                         sub_type: 'url',
