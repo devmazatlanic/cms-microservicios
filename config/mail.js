@@ -7,17 +7,16 @@ const { Console } = require('console');
 
 // Configuración del transporte SMTP
 const transporter = nodemailer.createTransport({
-    host: 'p3plzcpnl506083.prod.phx3.secureserver.net', // Nombre del host SMTP
+    host: 'smtp.office365.com', // Nombre del host SMTP
     port: 587, // 465: Puerto SMTP seguro
     secure: false, // true para usar SSL/TLS, false para SMTP no seguro
     auth: {
-        // user: 'osmzt@mztmic.com', // Correo electrónico del remitente  user: 'info@mztmic.com'
-        // pass: 'I0a!(_04v(EK' // Contraseña del correo electrónico del remitente pass: '[9DcNFo2{;_Z'
-        user: 'test@app.mztmic.com', 
-        pass: 'IfOlSK0N%ewu'
+        user: 'sistemas@mazatlanic.com',
+        pass: '$m1c_09$'
     },
     tls: {
-        minVersion: 'TLSv1.2'      // Asegúrate de usar TLS 1.2 o superior
+        ciphers: 'SSLv3',
+        rejectUnauthorized: true // puedes poner false solo para pruebas si hay tema de certificados
     },
     debug: true, // Activa los logs de depuración
     pool: true,
@@ -26,18 +25,31 @@ const transporter = nodemailer.createTransport({
 
 });
 
-const isValidUrl = (string) => {
+const isValidUrl = (str) => {
     try {
-        new URL(string);
-        return true;
-    } catch (_) {
+        const url = new URL(str);
+        return ['http:', 'https:'].includes(url.protocol);
+    } catch {
         return false;
     }
-};
+}
+
+// opcional: si tu servidor NO puede acceder a cdn.mztmic.com desde fuera,
+// aquí puedes traducir la URL pública a una interna (IP de la NAS)
+const mapToInternalNasUrl = (publicUrl) => {
+    // si desde tu Node sí ves cdn.mztmic.com:8000, regresas tal cual:
+    return publicUrl;
+
+    // si NO lo ves, puedes hacer algo así:
+    // const url = new URL(publicUrl);
+    // url.hostname = '192.168.90.123'; // IP interna de la NAS
+    // url.port = '8000';
+    // return url.toString();
+}
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-const enviarCorreo = async (datos, intento = 1) => {
+const enviarCorreo_bk = async (datos, intento = 1) => {
     try {
         if (!datos.to || !datos.subject || !datos.body) {
             throw new Error('Faltan datos requeridos para enviar el correo (to, subject, body).');
@@ -85,13 +97,83 @@ const enviarCorreo = async (datos, intento = 1) => {
         const info = await transporter.sendMail(mailOptions);
         console.log(`CORREO ENVIADO: ${info.response}`);
 
-        if(info.response != ""){
+        if (info.response != "") {
             // ELIMINAMOS EL ARCHIVO ADJUNTO
             if (tempFilePath) {
                 await fs.promises.unlink(tempFilePath);
                 console.log('ARCHIVO TEMPORAL ELIMINADO.');
             }
         }
+    } catch (error) {
+        if (error.message.includes('421') && intento <= 3) {
+            console.warn(`Intento ${intento} falló por límite SMTP. Reintentando en 5 segundos...`);
+            await sleep(5000);
+            return enviarCorreo(datos, intento + 1);
+        }
+
+        console.error('ERROR AL ENVIAR EL CORREO:', error.message);
+        throw new Error(`ERROR AL ENVIAR EL CORREO: ${error.message}`);
+    }
+};
+
+const enviarCorreo = async (datos, intento = 1) => {
+    try {
+        if (!datos.to || !datos.subject || !datos.body) {
+            throw new Error('Faltan datos requeridos para enviar el correo (to, subject, body).');
+        }
+
+        let attachmentConfig = [];
+
+        // Soportar 1 o varios adjuntos
+        const attachmentsInput = datos.attachments
+            ? (Array.isArray(datos.attachments) ? datos.attachments : [datos.attachments])
+            : [];
+
+        for (const adj of attachmentsInput) {
+            if (!adj) continue;
+
+            if (isValidUrl(adj)) {
+                // URL pública (NAS / CDN)
+                const fileUrl = mapToInternalNasUrl(adj);
+                const urlObj = new URL(fileUrl);
+                const fileName = decodeURIComponent(path.basename(urlObj.pathname));
+
+                console.log(`Descargando adjunto desde NAS: ${fileUrl}`);
+
+                const response = await axios.get(fileUrl, {
+                    responseType: 'arraybuffer',
+                    timeout: 30000
+                });
+
+                if (response.status !== 200) {
+                    throw new Error(`Error al descargar el archivo: ${response.status} - ${response.statusText}`);
+                }
+
+                attachmentConfig.push({
+                    filename: fileName,
+                    content: Buffer.from(response.data),
+                    contentType: response.headers['content-type'] || 'application/pdf'
+                });
+            } else {
+                console.warn('URL del adjunto no válida:', adj);
+            }
+        }
+
+        const mailOptions = {
+            from: 'no-reply@mazatlanic.com',
+            to: datos.to,
+            cc: datos.cc || '',
+            subject: `INFORMATIVO - ${datos.subject.toUpperCase()}`,
+            html: datos.body,
+            attachments: attachmentConfig
+        };
+
+        console.log(`------------------------------------------------------------------`);
+        console.log(`ENVIANDO CORREO, ${mailOptions.subject}`);
+        const info = await transporter.sendMail(mailOptions);
+        console.log(`CORREO ENVIADO: ${info.response}`);
+
+        return info;
     } catch (error) {
         if (error.message.includes('421') && intento <= 3) {
             console.warn(`Intento ${intento} falló por límite SMTP. Reintentando en 5 segundos...`);

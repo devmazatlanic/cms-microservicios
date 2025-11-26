@@ -8,7 +8,7 @@ const socket_cors = JSON.parse(process.env.SOCKET_CORS);
 class Server {
 
     constructor() {
-        const corsConfig = JSON.parse(process.env.socket_cors);
+        // const corsConfig = JSON.parse(process.env.socket_cors);
         this.app = express();
         this.app.use(cors({
             // origin: api_cors.origins,
@@ -59,19 +59,19 @@ class Server {
         //     req.clientIp = clientIp;
         //     next();
         // });
-    
-        
+
+
 
         this.app.get('/ipdevice', async (req, res) => {
-            const ip = 
-            req.headers['cf-connecting-ip'] ||  
-            req.headers['x-real-ip'] ||
-            req.headers['x-forwarded-for'] ||
-            req.socket.remoteAddress || '';
-                console.log(ip);
-                res.send(`Client IP: ${ip}`);
-            });
-        }
+            const ip =
+                req.headers['cf-connecting-ip'] ||
+                req.headers['x-real-ip'] ||
+                req.headers['x-forwarded-for'] ||
+                req.socket.remoteAddress || '';
+            console.log(ip);
+            res.send(`Client IP: ${ip}`);
+        });
+    }
 
     routes() {
         this.app.use(this.perfiles_path, require('../routes/perfiles'));
