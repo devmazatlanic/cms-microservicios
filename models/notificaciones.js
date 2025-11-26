@@ -1,4 +1,4 @@
-const { connection } = require('../databases/config');
+const  connection  = require('../databases/config');
 
 
 const setNotificacion = async (data) => {

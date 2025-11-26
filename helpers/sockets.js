@@ -81,6 +81,7 @@ const private_pantallas_local = async (_data = {}) => {
 
         try {
             const encontrarPantalla = await getPantallabyToken(token);
+            console.log(encontrarPantalla);
             if (encontrarPantalla.length > 0) {
                 // SI LA PANTALLA EXISTE, BUSCAMOS LA PLAYLIST ASOCIADA
                 const contenidoPantalla = await getPlaylisPantallabyToken(token);
@@ -95,6 +96,7 @@ const private_pantallas_local = async (_data = {}) => {
                         _return.playlist = defaulPlaylist;
                         _return.next = true;
                         _return.message = "SE ENCONTRÓ PLAYLIST DEFAULT";
+                        console.log("encontro paylist");
                     } else {
                         _return.message = "NO SE ENCONTRO UNA PLAYLIST DEFAULT";
                         _return.next = false;

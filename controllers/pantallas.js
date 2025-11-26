@@ -117,6 +117,7 @@ const socket_pantalla = async (_data = {}) => {
 
             try {
                 const encontrarPantalla = await getPantallabyToken(token);
+                console.log(encontrarPantalla);
                 if (encontrarPantalla.length > 0) {
                     // SI LA PANTALLA EXISTE, BUSCAMOS LA PLAYLIST ASOCIADA
                     const contenidoPantalla = await getPlaylisPantallabyToken(token);
@@ -146,6 +147,7 @@ const socket_pantalla = async (_data = {}) => {
                 _socket.emit(_data.server, _return);
 
             } catch (error) {
+                console.log(error);
                 // MANEJO DE ERRORES
                 console.error('Error al procesar la solicitud:', error);
                 _return.message = 'Hubo un error al procesar la solicitud.';

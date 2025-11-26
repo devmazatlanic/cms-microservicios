@@ -11,8 +11,10 @@ const transporter = nodemailer.createTransport({
     port: 587, // 465: Puerto SMTP seguro
     secure: false, // true para usar SSL/TLS, false para SMTP no seguro
     auth: {
-        user: 'osmzt@mztmic.com', // Correo electrónico del remitente  user: 'info@mztmic.com'
-        pass: 'I0a!(_04v(EK' // Contraseña del correo electrónico del remitente pass: '[9DcNFo2{;_Z'
+        // user: 'osmzt@mztmic.com', // Correo electrónico del remitente  user: 'info@mztmic.com'
+        // pass: 'I0a!(_04v(EK' // Contraseña del correo electrónico del remitente pass: '[9DcNFo2{;_Z'
+        user: 'test@app.mztmic.com', 
+        pass: 'IfOlSK0N%ewu'
     },
     tls: {
         minVersion: 'TLSv1.2'      // Asegúrate de usar TLS 1.2 o superior
