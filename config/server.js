@@ -8,7 +8,7 @@ const socket_cors = JSON.parse(process.env.SOCKET_CORS);
 class Server {
 
     constructor() {
-        // const corsConfig = JSON.parse(process.env.socket_cors);
+        const corsConfig = JSON.parse(process.env.socket_cors);
         this.app = express();
         this.app.use(cors({
             // origin: api_cors.origins,
