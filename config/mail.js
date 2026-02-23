@@ -7,21 +7,21 @@ const { Console } = require('console');
 
 // Configuración del transporte SMTP
 const transporter = nodemailer.createTransport({
-    host: 'p3plzcpnl506083.prod.phx3.secureserver.net', // Nombre del host SMTP
+    host: 'smtp.office365.com', // Nombre del host SMTP
     port: 587, // 465: Puerto SMTP seguro
     secure: false, // true para usar SSL/TLS, false para SMTP no seguro
     auth: {
-        user: 'osmzt@mztmic.com', // Correo electrónico del remitente  user: 'info@mztmic.com'
-        pass: 'I0a!(_04v(EK' // Contraseña del correo electrónico del remitente pass: '[9DcNFo2{;_Z'
+        user: 'sistemas@mazatlanic.com',
+        pass: '$m1c_09$'
     },
     tls: {
-        minVersion: 'TLSv1.2'      // Asegúrate de usar TLS 1.2 o superior
+        // ciphers: 'SSLv3',
+        rejectUnauthorized: true // puedes poner false solo para pruebas si hay tema de certificados
     },
     debug: true, // Activa los logs de depuración
     pool: true,
     maxConnections: 5,    // Ajusta este número según lo permitido
     maxMessages: 100,     // Cantidad de mensajes por conexión
-
 });
 
 const isValidUrl = (string) => {
@@ -83,7 +83,7 @@ const enviarCorreo = async (datos, intento = 1) => {
         const info = await transporter.sendMail(mailOptions);
         console.log(`CORREO ENVIADO: ${info.response}`);
 
-        if(info.response != ""){
+        if (info.response != "") {
             // ELIMINAMOS EL ARCHIVO ADJUNTO
             if (tempFilePath) {
                 await fs.promises.unlink(tempFilePath);

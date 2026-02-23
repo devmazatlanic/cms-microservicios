@@ -4,7 +4,7 @@ const { message_text, message_document, message_templete } = require("../shared/
 const { buildComponent, process_response } = require("../helpers/tools");
 
 const verify_token = (request, response) => {
-    const VERIFY_TOKEN = "miclave123"; // mismo que pusiste en Meta
+    const VERIFY_TOKEN = "=yY807'RDs@J"; // mismo que pusiste en Meta
     const mode = request.query['hub.mode'];
     const token = request.query['hub.verify_token'];
     const challenge = request.query['hub.challenge'];
@@ -121,10 +121,11 @@ const send_notification = (request, response) => {
                         }
                         break;
                     case 'notify_ordenservicio':
-                        if ((!Array.isArray(body.components) || body.components.length === 0) || (!body.filename?.trim())) {
+                    case 'notify_solicitud_factura_personalvariable':
+                        if ((!Array.isArray(body.components) || body.components.length === 0) || (!body.url?.trim())) {
                             return response.status(400).json({
                                 next: false,
-                                message: 'El campo components y filename es obligatorio y debe ser un arreglo con al menos un elemento.'
+                                message: 'El campo components y url es obligatorio y debe ser un arreglo con al menos un elemento.'
                             });
                         }
                         break;
@@ -143,7 +144,8 @@ const send_notification = (request, response) => {
 
                 switch (body.name) {
                     case 'notify_ordenservicio':
-                        if (body.filename && typeof body.filename === 'string' && body.filename.trim().length > 0) {
+                    case 'notify_solicitud_factura_personalvariable':
+                        if (body.filename && typeof body.url === 'string' && body.url.trim().length > 0) {
                             _config.components.push({
                                 type: 'button',
                                 sub_type: 'url',
@@ -151,7 +153,7 @@ const send_notification = (request, response) => {
                                 parameters: [
                                     {
                                         type: 'text',
-                                        text: body.filename
+                                        text: body.url
                                     }
                                 ]
                             });
