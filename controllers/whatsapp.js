@@ -121,6 +121,13 @@ const send_notification = (request, response) => {
                         }
                         break;
                     case 'notify_ordenservicio':
+                        if ((!Array.isArray(body.components) || body.components.length === 0) || (!body.link?.trim())) {
+                            return response.status(400).json({
+                                next: false,
+                                message: 'El campo components y link es obligatorio y debe ser un arreglo con al menos un elemento.'
+                            });
+                        }
+                        break;
                     case 'notify_solicitud_factura_personalvariable':
                         if ((!Array.isArray(body.components) || body.components.length === 0) || (!body.url?.trim())) {
                             return response.status(400).json({
@@ -144,6 +151,20 @@ const send_notification = (request, response) => {
 
                 switch (body.name) {
                     case 'notify_ordenservicio':
+                        if (body.filename && typeof body.link === 'string' && body.link.trim().length > 0) {
+                            _config.components.push({
+                                type: 'button',
+                                sub_type: 'url',
+                                index: 0,
+                                parameters: [
+                                    {
+                                        type: 'text',
+                                        text: body.link
+                                    }
+                                ]
+                            });
+                        }
+                        break;
                     case 'notify_solicitud_factura_personalvariable':
                         if (body.filename && typeof body.url === 'string' && body.url.trim().length > 0) {
                             _config.components.push({
