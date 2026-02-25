@@ -96,7 +96,7 @@ const send_notification = (request, response) => {
 
                 // CONDICIONES PARA SABER QUE PLANTILLA ES
                 switch (body.name) {
-                    case 'ordenservicio':
+                    // case 'ordenservicio':
                     case 'notify_autorizacion_personal':
                     case 'notify_solicitud_personal':
                     case 'notify_solicitud_personal_seguridad':

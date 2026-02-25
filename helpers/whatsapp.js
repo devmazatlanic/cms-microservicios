@@ -9,7 +9,7 @@ const send_message = (_model) => {
         host: "graph.facebook.com",
         path: "/v22.0/685674191289157/messages",
         method: "POST",
-        port:     443,
+        port: 443,
         // body: _payload,
         headers: {
             "Content-Type": "application/json",
@@ -18,13 +18,19 @@ const send_message = (_model) => {
         }
     };
 
+    const normalizeUrl = (p) => {
+        const url = typeof p?.url === 'string' ? p.url.trim() : '';
+        const link = typeof p?.link === 'string' ? p.link.trim() : '';
+        return url || link || null;
+    };
+
     const request = http.request(_options, response => {
         let data = '';
         // Opcional: loguea el status
         console.log('Status code:', response.statusCode);
 
         response.on('data', (chunk) => data += chunk);
-        response.on('end', () => { 
+        response.on('end', () => {
             console.log('Respuesta WhatsApp:', data);
             let _response = JSON.parse(data);
             let _payload_response = JSON.parse(_payload);
@@ -34,9 +40,9 @@ const send_message = (_model) => {
                 phone_number: _payload_response.to,
                 type: _payload_response.type,
                 name: _payload_response.template?.name || null,
-                id_message: _response?.messages?.[0]?.id || null, 
+                id_message: _response?.messages?.[0]?.id || null,
                 message_status: _response?.messages?.[0]?.message_status || null,
-                url: _payload_response?.url || null,
+                url: normalizeUrl(_payload_response),
                 filename: _payload_response?.filename || null,
                 caption: _payload_response?.caption || null,
                 model: JSON.parse(_payload)
