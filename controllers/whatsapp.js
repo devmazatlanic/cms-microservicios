@@ -97,7 +97,6 @@ const send_notification = (request, response) => {
                 // CONDICIONES PARA SABER QUE PLANTILLA ES
                 switch (body.name) {
                     // case 'ordenservicio':
-                    case 'notify_autorizacion_personal':
                     case 'notify_solicitud_personal':
                     case 'notify_solicitud_personal_seguridad':
                     case 'ordenservicio_reenvio':
@@ -120,6 +119,7 @@ const send_notification = (request, response) => {
                             });
                         }
                         break;
+                    case 'notify_autorizacion_personal':
                     case 'notify_ordenservicio':
                         if ((!Array.isArray(body.components) || body.components.length === 0) || (!body.link?.trim())) {
                             return response.status(400).json({
@@ -150,8 +150,9 @@ const send_notification = (request, response) => {
                 }
 
                 switch (body.name) {
+                    case 'notify_autorizacion_personal':
                     case 'notify_ordenservicio':
-                        if (body.filename && typeof body.link === 'string' && body.link.trim().length > 0) {
+                        if (typeof body.link === 'string' && body.link.trim().length > 0) {
                             _config.components.push({
                                 type: 'button',
                                 sub_type: 'url',
