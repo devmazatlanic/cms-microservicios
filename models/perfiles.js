@@ -2,15 +2,7 @@ const { connection } = require('../databases/config');
 
 const getPerfiles = async () => {
     try {
-        // CONEXION A LA BASE DE DATOS
-        await new Promise((resolve, reject) => {
-            connection.connect((err) => {
-                if (err) reject(err);
-                else resolve();
-            });
-        });
-
-        // CONSULTA
+        // El pool administra la conexion por consulta
         const queryResult = await new Promise((resolve, reject) => {
             connection.query('SELECT * FROM perfiles', (error, results) => {
                 if (error) reject(error);
