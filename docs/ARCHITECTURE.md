@@ -47,10 +47,16 @@ Arquitectura tipo MVC ligera con responsabilidades separadas por carpeta, pero s
 
 ## Integraciones externas
 - MySQL
-- SMTP Office 365
+- SMTP configurable por entorno
 - WhatsApp Cloud API / Meta
 - certificados TLS locales detectados
 - archivos estaticos y plantillas locales
+
+## Nota sobre correo
+- `config/mail.js` concentra hoy el transporte SMTP, el armado de correos y parte del manejo de adjuntos.
+- La configuracion del transporte ya depende de variables `MAIL_*`, con pool, throttling y timeouts configurables.
+- El proveedor SMTP productivo sigue pendiente de definicion formal; la implementacion actual permite cambiar de relay o servicio transaccional sin tocar controladores.
+- Existe un endpoint interno `POST /api/mail/simple` para notificaciones breves con plantilla corporativa reutilizable.
 
 ## Nota sobre WhatsApp
 - El modulo de WhatsApp funciona como integracion interna para envio transaccional y recepcion de webhooks.

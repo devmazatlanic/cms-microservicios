@@ -40,6 +40,7 @@ class Server {
         this.pantallas_path = '/api/pantallas';
         this.web_path = '/api/web';
         this.whatsapp_path = '/api/whatsapp';
+        this.mail_path = '/api/mail';
         // MIDDLEWARES
         this.middlewares();
         // ROUTES
@@ -101,6 +102,7 @@ class Server {
         this.app.use(this.pantallas_path, require('../routes/pantallas'));
         this.app.use(this.web_path, require('../routes/web'));
         this.app.use(this.whatsapp_path, require('../routes/whatsapp'));
+        this.app.use(this.mail_path, require('../routes/mail'));
     }
 
     initSocket() {

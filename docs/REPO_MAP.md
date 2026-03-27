@@ -32,6 +32,7 @@
 - `helpers/whatsapp.js`
 - `helpers/tools.js`
 - `controllers/whatsapp.js`
+- `controllers/mail.js`
 - `controllers/notificaciones.js`
 - `controllers/rfid.js`
 - `models/eventos.js`
@@ -41,10 +42,12 @@
 - Entrada principal: `app.js`
 - Bootstrap HTTP/Socket.IO: `config/server.js`
 - Webhook WhatsApp: `/api/whatsapp`
+- Correo simple transaccional: `/api/mail/simple`
 - Socket server: inicializado desde `server.initSocket()`
 
 ## Configuracion clave
 - `.env`: `PORT`, `API_CORS`, `SOCKET_CORS`, `WHATSAPP_VERIFY_TOKEN`, `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_API_VERSION`
+- `.env`: `MAIL_*` para transporte SMTP y remitentes visibles
 - `databases/config.js`: conexion o wrapper de MySQL
 - `config/mail.js`: SMTP y envio de correos
 - `certs/`: certificados locales detectados
@@ -53,6 +56,7 @@
 - `server` monta rutas
 - `routes` invoca `controllers`
 - `controllers` consumen `models`, `helpers` y `config/mail`
+- `controllers/mail` consume `config/mail` y usa plantilla corporativa simple para notificaciones transaccionales
 - `models` consultan MySQL
 - `helpers/whatsapp` llama a Meta
 - `config/mail` llama a SMTP y usa `views/emails`

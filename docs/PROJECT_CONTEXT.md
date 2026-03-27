@@ -7,6 +7,7 @@ Exponer microservicios de apoyo para operaciones ligadas a CRM/eventos, particul
 - notificaciones por correo, actualmente deshabilitadas temporalmente en las rutas expuestas
 - solicitudes de autorizacion y cancelacion
 - envio de recibos y reportes
+- envio de notificaciones simples por correo mediante endpoint interno
 - webhook y envio saliente de WhatsApp
 - registro de eventos RFID
 - consulta de eventos del dia y proximos eventos
@@ -17,6 +18,7 @@ Exponer microservicios de apoyo para operaciones ligadas a CRM/eventos, particul
 - `notificaciones`
 - `ingresos`
 - `whatsapp`
+- `mail`
 - `rfid`
 - `pantallas`
 - `web`
@@ -32,7 +34,7 @@ Exponer microservicios de apoyo para operaciones ligadas a CRM/eventos, particul
 
 ## Dependencias clave
 - Base de datos MySQL
-- SMTP Office 365
+- SMTP configurable por entorno para correo transaccional
 - WhatsApp Cloud API / Meta
 - Variables de entorno para puerto y CORS
 - Plantillas de correo en disco
@@ -44,6 +46,8 @@ Exponer microservicios de apoyo para operaciones ligadas a CRM/eventos, particul
 - El modulo de WhatsApp tiene proyeccion futura hacia automatizacion conversacional o bot.
 - El modulo de WhatsApp ya cuenta con un flujo inicial de menu/bot para mensajes sin contexto y respuestas basicas de ayuda operativa.
 - `/api/notificaciones/*` esta deshabilitado temporalmente mientras se define un reemplazo del servicio de correo.
+- El modulo de correo sigue activo para `ingresos` y `web`, pero el proveedor SMTP definitivo para produccion aun requiere validacion.
+- Existe un endpoint interno para correo simple pensado para mensajes transaccionales breves con plantilla corporativa reutilizable.
 
 ## Riesgos o vacios de contexto
 - Pendiente de validacion: topologia real de despliegue.

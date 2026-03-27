@@ -49,6 +49,8 @@ Pendiente de validacion:
 - Existe logica para cargar certificados, pero HTTPS esta comentado.
 - El servicio depende de configuracion en `.env`, de una base MySQL y de credenciales externas.
 - Se detectaron endpoints con efectos laterales reales, incluyendo mensajes de WhatsApp.
+- El modulo de correo ya se configura por variables `MAIL_*`, por lo que el proveedor SMTP puede cambiarse por ambiente sin modificar codigo.
+- Existe un endpoint interno adicional para correo simple transaccional bajo `/api/mail/simple`.
 - El modulo de `notificaciones` esta deshabilitado temporalmente y sus rutas responden `410 Gone`.
 - El webhook de WhatsApp ya sincroniza `message_status` en `whatsapp_requests` cuando Meta envia `statuses`.
 
@@ -58,3 +60,4 @@ Pendiente de validacion:
 - Pendiente de validacion: version de Node soportada.
 - Se detecto informacion sensible versionada o almacenada en archivos del repositorio.
 - Se detectaron inconsistencias entre la capa de base de datos local y lo que esperan los modelos.
+- Pendiente de validacion: proveedor SMTP productivo definitivo y politicas de autentificacion del dominio para correo transaccional.

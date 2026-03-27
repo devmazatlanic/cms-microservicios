@@ -281,3 +281,135 @@ Todo lo no confirmado debe tratarse como pendiente de validacion.
   - mensaje sin `context.id` con `ESTADO`
   - respuesta al propio mensaje del menu
   - confirmacion en `whatsapp_requests` de nombres internos `bot_menu` y `bot_status`
+
+### 2026-03-26 - Validacion operativa inicial de WhatsApp en entorno real
+- Objetivo: confirmar en ambiente real el funcionamiento de `send_notification`, sincronizacion de `statuses`, flujo de `context.id` y menu/bot inicial.
+- Archivos revisados:
+  - `controllers/whatsapp.js`
+  - `helpers/tools.js`
+  - `helpers/whatsapp.js`
+  - `models/whatsapp.js`
+  - `docs/KNOWN_ISSUES.md`
+  - `docs/PENDING_ITEMS.md`
+  - `docs/MAINTENANCE_LOG.md`
+- Resultado observado:
+  - las plantillas probadas desde Postman respondieron correctamente
+  - el webhook y la bitacora local mostraron funcionamiento correcto en pruebas reales
+  - el menu/bot inicial quedo operativo en ambiente real
+  - los `console.log` se mantuvieron activos para continuar observacion controlada
+- Decision:
+  - se retiran de pendientes las validaciones ya confirmadas de `send_notification`, carga de `WHATSAPP_*`, sincronizacion basica de `statuses` y menu inicial
+  - el siguiente frente activo queda en evolucion del bot sobre la base ya validada
+
+### 2026-03-26 - Endurecimiento inicial de configuracion SMTP
+- Objetivo: retirar dependencia hardcodeada del proveedor SMTP y dejar `config/mail.js` listo para cambio de relay por ambiente.
+- Archivos modificados:
+  - `config/mail.js`
+  - `.env`
+  - `docs/README.md`
+  - `docs/PROJECT_CONTEXT.md`
+  - `docs/ARCHITECTURE.md`
+  - `docs/SETUP.md`
+  - `docs/KNOWN_ISSUES.md`
+  - `docs/PENDING_ITEMS.md`
+  - `docs/MAINTENANCE_LOG.md`
+- Cambio aplicado:
+  - `config/mail.js` ahora usa configuracion `MAIL_*` para host, puerto, credenciales, TLS, pool, throttling y timeouts
+  - el transporte SMTP se inicializa de forma perezosa en el primer envio real
+  - se dejo logging explicito cuando faltan variables de correo y cuando el transporte se inicializa
+  - se agrego plantilla comentada de variables `MAIL_*` en `.env` para referencia operativa sin introducir nuevos secretos en codigo
+  - se actualizo la documentacion para reflejar que el proveedor SMTP ya es intercambiable por ambiente
+- Riesgo: medio, porque los flujos activos de correo ahora dependen de que `MAIL_*` exista correctamente en el ambiente productivo.
+- Validacion sugerida:
+  - cargar `config/mail.js`
+  - cargar `controllers/ingresos.js` y `controllers/web.js`
+  - probar envio real desde `ingresos` y `web`
+  - confirmar configuracion SPF, DKIM y DMARC del dominio remitente
+- Nota operativa:
+  - este endurecimiento reduce acoplamiento y permite migrar a un proveedor transaccional dedicado, pero no elimina por si mismo bloqueos de reputacion o umbrales del relay actual.
+
+### 2026-03-27 - Alineacion inicial de `.env` para pruebas con GoDaddy/cPanel
+- Objetivo: dejar una configuracion SMTP consistente para la primera ventana de pruebas reales con el correo del hosting de GoDaddy.
+- Archivos modificados:
+  - `.env`
+  - `docs/MAINTENANCE_LOG.md`
+- Cambio aplicado:
+  - se alineo `MAIL_PORT=465` con `MAIL_SECURE=true`
+  - se definio `MAIL_REQUIRE_TLS=false` para la prueba inicial por SSL implicito
+  - se activaron explicitamente opciones de TLS, pool, throttling y timeouts
+  - se alinearon `MAIL_FROM_*` y `MAIL_CC_*` temporalmente a la misma cuenta autenticada para reducir rechazos por mezcla de dominios o remitentes
+- Riesgo: medio, porque la prueba sigue dependiendo de que el relay de GoDaddy acepte la cuenta y de la reputacion/configuracion del dominio.
+- Validacion sugerida:
+  - reiniciar el servicio
+  - ejecutar una prueba de envio controlada
+  - revisar consola para handshake SMTP, autenticacion y respuesta del relay
+  - si la prueba pasa, separar despues remitentes y copias reales de negocio
+
+### 2026-03-27 - Endpoint interno para correo simple transaccional
+- Objetivo: habilitar un endpoint reutilizable para notificaciones simples con plantilla empresarial, sin reactivar el modulo legacy de `notificaciones`.
+- Archivos modificados:
+  - `config/server.js`
+  - `config/mail.js`
+  - `config/plantillas.js`
+  - `controllers/mail.js`
+  - `routes/mail.js`
+  - `views/emails/simple_notification.hbs`
+  - `docs/README.md`
+  - `docs/PROJECT_CONTEXT.md`
+  - `docs/REPO_MAP.md`
+  - `docs/ARCHITECTURE.md`
+  - `docs/SETUP.md`
+  - `docs/MAINTENANCE_LOG.md`
+- Cambio aplicado:
+  - se creo la ruta `POST /api/mail/simple`
+  - el endpoint valida `to`, `name` y `comment` como campos obligatorios
+  - se agrego una plantilla corporativa simple para mensajes transaccionales breves
+  - el nuevo flujo reutiliza el transporte SMTP ya endurecido y permite `subject` y `cc` opcionales
+- Riesgo: medio, porque agrega un endpoint con side effect real y depende de control de acceso a nivel de red/aplicacion.
+- Validacion sugerida:
+  - enviar un correo simple por Postman
+  - revisar respuesta HTTP
+  - revisar consola para confirmacion SMTP
+  - confirmar recepcion en bandeja o spam del destinatario
+
+### 2026-03-27 - Ajuste visual de plantilla para correo simple
+- Objetivo: refinar la presentacion del correo simple y retirar textos de cierre no deseados.
+- Archivos modificados:
+  - `views/emails/simple_notification.hbs`
+  - `docs/MAINTENANCE_LOG.md`
+- Cambio aplicado:
+  - se agrego una etiqueta superior discreta para reforzar identidad visual
+  - se ajusto la jerarquia tipografica del titulo principal
+  - se elimino la linea de seguimiento adicional del cuerpo
+  - se elimino el enlace `Sitio Web` del footer
+- Riesgo: bajo, acotado a la apariencia del correo simple.
+- Validacion sugerida:
+  - reenviar una prueba por `POST /api/mail/simple`
+  - confirmar visualmente encabezado, cuerpo y footer actualizados
+
+### 2026-03-27 - Refinamiento visual hacia formato de comunicado oficial
+- Objetivo: hacer mas sobrio el correo simple, reduciendo repeticion de marca y mejorando jerarquia del titulo.
+- Archivos modificados:
+  - `views/emails/simple_notification.hbs`
+  - `docs/MAINTENANCE_LOG.md`
+- Cambio aplicado:
+  - el `subject` ahora se presenta visualmente en mayusculas
+  - se retiro la marca adicional del encabezado
+  - la firma de marca se movio al footer, debajo de `Atentamente`
+  - se mantuvo una sola presencia fuerte de marca en el header mediante el logo
+- Riesgo: bajo, acotado a la presentacion del correo simple.
+- Validacion sugerida:
+  - reenviar una prueba por `POST /api/mail/simple`
+  - confirmar que el titulo aparezca en mayusculas y que la firma visual quede al final
+
+### 2026-03-27 - Registro de backlog tecnico pendiente
+- Objetivo: dejar visibles como pendientes los siguientes frentes para retomarlos despues sin perder contexto.
+- Archivos modificados:
+  - `docs/PENDING_ITEMS.md`
+  - `docs/MAINTENANCE_LOG.md`
+- Cambio aplicado:
+  - se mantuvo pendiente la proteccion de `/api/mail/simple`
+  - se agrego explicitamente la separacion futura entre `info@...` y `no-reply@...`
+  - se conserva como pendiente activo la fase 2 del bot de WhatsApp
+  - se mantiene pendiente el rediseño o reemplazo formal del modulo de notificaciones/correo legado
+- Riesgo: bajo, documental.
