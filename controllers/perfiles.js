@@ -1,5 +1,4 @@
 const { request, response } = require('express');
-const { enviarCorreo } = require('../config/mail');
 const { getPerfiles } = require('../models/perfiles');
 
 
@@ -19,9 +18,6 @@ const get_perfiles = async (request, response) => {
             message: 'GET API - CONTROLLER',
             perfiles: perfilesData
         });
-
-        // ENVIAMOS EL CORREO ELECTRONICO CON LOS DATOS OBTENIDOS
-        await enviarCorreo();
     } catch (error) {
         console.error('ERROR AL OBTENER LOS PERFILES: ', error);
         response.status(500).json({ error: 'ERROR AL OBTENER LOS PERFILES' });

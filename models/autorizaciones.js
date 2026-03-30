@@ -1,4 +1,4 @@
-const  connection  = require('../databases/config');
+const { connection } = require('../helpers/db_connection');
 
 const getSolicitudAutorizacion = async (_idSolicitudAutorizacion) => {
     try {

@@ -1,17 +1,18 @@
 const { Router } = require('express');
-const {
-    post_notificacion_solicitudautorizacion,
-    post_notificaciones_solicitudcancelacion,
-    post_notificaciones,
-    post_notificaciones_reporte_bancos
-} = require('../controllers/notificaciones');
 
 const router = Router();
 
-router.post('/', post_notificaciones);
-router.post('/solicitudcancelacion', post_notificaciones_solicitudcancelacion);
-router.post('/solicitudautorizacion', post_notificacion_solicitudautorizacion);
-router.get('/enviar_reporte_bancos', post_notificaciones_reporte_bancos);
+const notificaciones_deshabilitadas = (_request, response) => {
+    return response.status(410).json({
+        next: false,
+        message: 'El servicio de notificaciones por correo se encuentra deshabilitado temporalmente.'
+    });
+};
+
+router.post('/', notificaciones_deshabilitadas);
+router.post('/solicitudcancelacion', notificaciones_deshabilitadas);
+router.post('/solicitudautorizacion', notificaciones_deshabilitadas);
+router.get('/enviar_reporte_bancos', notificaciones_deshabilitadas);
 
 
 module.exports = router;

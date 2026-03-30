@@ -113,6 +113,21 @@ const getReporteBancos = async (datos) => {
 };
 
 // Función para cargar y renderizar una plantilla HTML con Handlebars
+const getSimpleNotification = async (datos) => {
+    try {
+        let ruta = '../../views/emails/simple_notification.hbs';
+        const rutaPlantillaHTML = path.join(__dirname, 'vistas', `${ruta}`);
+        const contenidoPlantillaHTML = await fs.readFile(rutaPlantillaHTML, 'utf8');
+        const plantillaCompilada = handlebars.compile(contenidoPlantillaHTML);
+        const contenidoHTML = plantillaCompilada(datos);
+
+        return contenidoHTML;
+    } catch (error) {
+        throw new Error(`ERROR AL CARGAR LA PLANTILLA HTML: ${error.message}`);
+    }
+};
+
+// Función para cargar y renderizar una plantilla HTML con Handlebars
 const webContactUs = async (datos) => {
     try {
         // Construir la ruta completa del archivo de plantilla HTML
@@ -163,6 +178,7 @@ module.exports = {
     getCancelacionCotizacion,
     getReciboIngreso,
     getReporteBancos,
+    getSimpleNotification,
     webContactUs,
     webReminderContactUs
 };

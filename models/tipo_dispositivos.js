@@ -1,4 +1,4 @@
-const connection  = require('../databases/config');
+const { connection } = require('../helpers/db_connection');
 
 const getDispositivo = async (_mac_address) => {
     try {
@@ -25,8 +25,8 @@ const getDispositivo = async (_mac_address) => {
 const store = async (data) => {
     try {
         // CONSULTA DE INSERCION - TCR_AUTORIZACIONSOLICITUD
-            const _sql = `INSERT INTO checador_rfid (id_dispositivo_lector, id_perfil, id_tarjeta_rfid) VALUES (?, ?, ?)`;
-            const _store = await new Promise((resolve, reject) => {
+        const _sql = `INSERT INTO checador_rfid (id_dispositivo_lector, id_perfil, id_tarjeta_rfid) VALUES (?, ?, ?)`;
+        const _store = await new Promise((resolve, reject) => {
             connection.query(_sql, [data.id_dispositivo_lector, data.id_perfil, data.id_tarjeta_rfid], (error, results) => {
                 if (error) reject(error);
                 else resolve(results);

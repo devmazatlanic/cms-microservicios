@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notificacion</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        table {
+            border-spacing: 0;
+            width: 100%;
+            margin: 0 auto;
+            background-color: #f4f4f4;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            background-color: #f4f4f4;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .header img {
+            max-width: 240px;
+        }
+
+        .content {
+            padding: 24px;
+            color: #333333;
+        }
+
+        .content h1 {
+            font-size: 30px;
+            line-height: 1.2;
+            margin: 0 0 18px;
+            color: #333333;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .content p {
+            margin: 0 0 16px;
+            line-height: 1.6;
+            color: #555555;
+        }
+
+        .message-box {
+            background-color: #f7f9fc;
+            border-left: 4px solid #007bff;
+            padding: 16px;
+            margin: 20px 0;
+        }
+
+        .footer {
+            background-color: #f4f4f4;
+            text-align: center;
+            padding: 18px;
+            font-size: 14px;
+            color: #777777;
+        }
+
+        .signature-brand {
+            display: inline-block;
+            margin: 6px 0 0;
+            padding: 6px 12px;
+            border-radius: 999px;
+            background-color: #eef4ff;
+            color: #315ea8;
+            font-size: 12px;
+            font-weight: bold;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+    <table>
+        <tr>
+            <td>
+                <div class="container">
+                    <div class="header">
+                        <img src="cid:logoMIC" alt="Mazatlan International Center">
+                    </div>
+                    <div class="content">
+                        <h1>{{ subject }}</h1>
+                        <p>Estimado/a <strong>{{ name }}</strong>,</p>
+                        <p>Le compartimos la siguiente notificacion:</p>
+                        <div class="message-box">
+                            <p>{{ comment }}</p>
+                        </div>
+                    </div>
+                    <div class="footer">
+                        <p>Atentamente,</p>
+                        <p class="signature-brand">Mazatlan International Center</p>
+                    </div>
+                </div>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

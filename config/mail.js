@@ -2,28 +2,125 @@ const nodemailer = require('nodemailer');
 const path = require('path');
 const fs = require('fs');
 const axios = require('axios');
-const { getLayoutTest, getSolicitudAutorizacion, getCancelacionCotizacion, getReciboIngreso, getReporteBancos, webContactUs, webReminderContactUs } = require('../config/plantillas');
-const { Console } = require('console');
+const { getSolicitudAutorizacion, getCancelacionCotizacion, getReciboIngreso, getReporteBancos, getSimpleNotification, webContactUs, webReminderContactUs } = require('../config/plantillas');
 
-// Configuración del transporte SMTP
-const transporter = nodemailer.createTransport({
-    host: 'smtp.office365.com', // Nombre del host SMTP
-    port: 587, // 465: Puerto SMTP seguro
-    secure: false, // true para usar SSL/TLS, false para SMTP no seguro
-    auth: {
-        user: 'sistemas@mazatlanic.com',
-        pass: '$m1c_09$'
-    },
-    tls: {
-        ciphers: 'SSLv3',
-        rejectUnauthorized: true // puedes poner false solo para pruebas si hay tema de certificados
-    },
-    debug: true, // Activa los logs de depuración
-    pool: true,
-    maxConnections: 5,    // Ajusta este número según lo permitido
-    maxMessages: 100,     // Cantidad de mensajes por conexión
+const getEnvBoolean = (value, defaultValue = false) => {
+    if (value === undefined || value === null || value === '') {
+        return defaultValue;
+    }
 
-});
+    const normalized = String(value).trim().toLowerCase();
+
+    if (['true', '1', 'yes', 'on'].includes(normalized)) {
+        return true;
+    }
+
+    if (['false', '0', 'no', 'off'].includes(normalized)) {
+        return false;
+    }
+
+    return defaultValue;
+};
+
+const getEnvInteger = (value, defaultValue) => {
+    const parsed = Number.parseInt(String(value ?? '').trim(), 10);
+    return Number.isFinite(parsed) ? parsed : defaultValue;
+};
+
+const MAIL_CONFIG = {
+    host: process.env.MAIL_HOST || '',
+    port: getEnvInteger(process.env.MAIL_PORT, 587),
+    secure: getEnvBoolean(process.env.MAIL_SECURE, false),
+    user: process.env.MAIL_USER || '',
+    pass: process.env.MAIL_PASS || '',
+    requireTls: getEnvBoolean(process.env.MAIL_REQUIRE_TLS, false),
+    tlsRejectUnauthorized: getEnvBoolean(process.env.MAIL_TLS_REJECT_UNAUTHORIZED, true),
+    debug: getEnvBoolean(process.env.MAIL_DEBUG, false),
+    pool: getEnvBoolean(process.env.MAIL_POOL, true),
+    maxConnections: getEnvInteger(process.env.MAIL_MAX_CONNECTIONS, 1),
+    maxMessages: getEnvInteger(process.env.MAIL_MAX_MESSAGES, 10),
+    rateDeltaMs: getEnvInteger(process.env.MAIL_RATE_DELTA_MS, 60000),
+    rateLimit: getEnvInteger(process.env.MAIL_RATE_LIMIT, 10),
+    connectionTimeoutMs: getEnvInteger(process.env.MAIL_CONNECTION_TIMEOUT_MS, 15000),
+    greetingTimeoutMs: getEnvInteger(process.env.MAIL_GREETING_TIMEOUT_MS, 15000),
+    socketTimeoutMs: getEnvInteger(process.env.MAIL_SOCKET_TIMEOUT_MS, 30000),
+    fromDefault: process.env.MAIL_FROM_DEFAULT || 'no-reply@mazatlanic.com',
+    fromInfo: process.env.MAIL_FROM_INFO || 'info@mazatlanic.com',
+    ccSistemas: process.env.MAIL_CC_SISTEMAS || 'sistemas@mazatlanic.com',
+    ccWebContact: process.env.MAIL_CC_WEB_CONTACT || 'susana.arizmendi@mazatlanic.com'
+};
+
+let transporter = null;
+
+const getMissingMailConfig = () => {
+    const requiredKeys = [
+        ['MAIL_HOST', MAIL_CONFIG.host],
+        ['MAIL_USER', MAIL_CONFIG.user],
+        ['MAIL_PASS', MAIL_CONFIG.pass]
+    ];
+
+    return requiredKeys
+        .filter(([, value]) => !value)
+        .map(([key]) => key);
+};
+
+const buildTransportOptions = () => {
+    const options = {
+        host: MAIL_CONFIG.host,
+        port: MAIL_CONFIG.port,
+        secure: MAIL_CONFIG.secure,
+        requireTLS: MAIL_CONFIG.requireTls,
+        auth: {
+            user: MAIL_CONFIG.user,
+            pass: MAIL_CONFIG.pass
+        },
+        tls: {
+            rejectUnauthorized: MAIL_CONFIG.tlsRejectUnauthorized
+        },
+        debug: MAIL_CONFIG.debug,
+        pool: MAIL_CONFIG.pool,
+        maxConnections: MAIL_CONFIG.maxConnections,
+        maxMessages: MAIL_CONFIG.maxMessages,
+        connectionTimeout: MAIL_CONFIG.connectionTimeoutMs,
+        greetingTimeout: MAIL_CONFIG.greetingTimeoutMs,
+        socketTimeout: MAIL_CONFIG.socketTimeoutMs
+    };
+
+    if (MAIL_CONFIG.rateDeltaMs > 0 && MAIL_CONFIG.rateLimit > 0) {
+        options.rateDelta = MAIL_CONFIG.rateDeltaMs;
+        options.rateLimit = MAIL_CONFIG.rateLimit;
+    }
+
+    return options;
+};
+
+const logMailConfigurationWarning = () => {
+    const missingConfig = getMissingMailConfig();
+    if (missingConfig.length > 0) {
+        console.warn(`[MAIL] Configuracion incompleta. Faltan variables: ${missingConfig.join(', ')}`);
+    }
+};
+
+const getTransporter = () => {
+    if (transporter) {
+        return transporter;
+    }
+
+    const missingConfig = getMissingMailConfig();
+    if (missingConfig.length > 0) {
+        throw new Error(`La configuracion de correo no esta completa. Faltan: ${missingConfig.join(', ')}`);
+    }
+
+    transporter = nodemailer.createTransport(buildTransportOptions());
+    console.log(`[MAIL] Transport SMTP inicializado para ${MAIL_CONFIG.host}:${MAIL_CONFIG.port} con pool=${MAIL_CONFIG.pool} rateLimit=${MAIL_CONFIG.rateLimit}/${MAIL_CONFIG.rateDeltaMs}ms.`);
+    return transporter;
+};
+
+const sendMail = async (mailOptions) => {
+    return getTransporter().sendMail(mailOptions);
+};
+
+logMailConfigurationWarning();
 
 const isValidUrl = (str) => {
     try {
@@ -84,7 +181,7 @@ const enviarCorreo_bk = async (datos, intento = 1) => {
         }
 
         const mailOptions = {
-            from: 'no-reply@mazatlanic.com',
+            from: MAIL_CONFIG.fromDefault,
             to: datos.to,
             cc: datos.cc || '',
             subject: `INFORMATIVO - ${datos.subject.toUpperCase()}`,
@@ -94,7 +191,7 @@ const enviarCorreo_bk = async (datos, intento = 1) => {
 
         console.log(`------------------------------------------------------------------`);
         console.log(`ENVIANDO CORREO, ${mailOptions.subject}`);
-        const info = await transporter.sendMail(mailOptions);
+        const info = await sendMail(mailOptions);
         console.log(`CORREO ENVIADO: ${info.response}`);
 
         if (info.response != "") {
@@ -194,15 +291,15 @@ const mail_solicitudAutorizacion = async (datos) => {
 
         // Objeto de configuración de correo electrónico
         const mailOptions = {
-            from: 'info@mazatlanic.com', // Dirección de correo del remitente 
+            from: MAIL_CONFIG.fromInfo, // Dirección de correo del remitente 
             to: datos.email_quienautoriza, // Dirección de correo del destinatario
-            cc: datos.email_quiensolicita + ', sistemas@mazatlanic.com',
+            cc: `${datos.email_quiensolicita}, ${MAIL_CONFIG.ccSistemas}`,
             subject: 'NOTIFICACION - SOLICITUD DE AUTORIZACION', // Asunto del correo
             html: contenidoHTML // Contenido del correo en texto plano
         };
 
         // Enviar el correo electrónico
-        const info = await transporter.sendMail(mailOptions);
+        const info = await sendMail(mailOptions);
         console.log('CORREO ENVIADO:', info.response);
     } catch (error) {
         console.error('ERROR AL ENVIAR EL CORREO: ', error);
@@ -217,16 +314,16 @@ const mail_cancelacionCotizacion = async (datos) => {
 
         // Objeto de configuración de correo electrónico
         const mailOptions = {
-            from: 'info@mazatlanic.com', // Dirección de correo del remitente 
+            from: MAIL_CONFIG.fromInfo, // Dirección de correo del remitente 
             to: datos.email_quienautoriza, // Dirección de correo del destinatario
             // cc: datos.email_quiensolicita + ', sistemas@mazatlanic.com',
-            cc: 'sistemas@mazatlanic.com',
+            cc: MAIL_CONFIG.ccSistemas,
             subject: `NOTIFICACION - CANCELACION DE LA COTIZACION CON FOLIO ${datos.cotizacion_id} DEL EVENTO ${datos.evento.evento.toUpperCase()}`, // Asunto del correo
             html: contenidoHTML // Contenido del correo en texto plano
         };
 
         // Enviar el correo electrónico
-        const info = await transporter.sendMail(mailOptions);
+        const info = await sendMail(mailOptions);
         console.log('CORREO ENVIADO:', info.response);
     } catch (error) {
         console.error('ERROR AL ENVIAR EL CORREO: ', error);
@@ -241,16 +338,16 @@ const mail_enviar_recibodeingreso = async (datos) => {
 
         // Objeto de configuración de correo electrónico
         const mailOptions = {
-            from: 'info@mazatlanic.com', // Dirección de correo del remitente 
+            from: MAIL_CONFIG.fromInfo, // Dirección de correo del remitente 
             to: datos.correos, // Dirección de correo del destinatario
             // cc: datos.email_quiensolicita + ', sistemas@mazatlanic.com',
-            cc: 'sistemas@mazatlanic.com',
+            cc: MAIL_CONFIG.ccSistemas,
             subject: `NOTIFICACION - CONTRA RECIBO DE INGRESO CON EL FOLIO ${datos.response.id}`, // Asunto del correo
             html: contenidoHTML // Contenido del correo en texto plano
         };
 
         // Enviar el correo electrónico
-        const info = await transporter.sendMail(mailOptions);
+        const info = await sendMail(mailOptions);
         console.log('CORREO ENVIADO:', info.response);
     } catch (error) {
         console.error('ERROR AL ENVIAR EL CORREO: ', error);
@@ -265,19 +362,47 @@ const mail_enviar_reportebancos = async (datos) => {
 
         // Objeto de configuración de correo electrónico
         const mailOptions = {
-            from: 'info@mazatlanic.com', // Dirección de correo del remitente 
+            from: MAIL_CONFIG.fromInfo, // Dirección de correo del remitente 
             to: datos.correo, // Dirección de correo del destinatario
             // cc: datos.email_quiensolicita + ', sistemas@mazatlanic.com',
-            cc: 'sistemas@mazatlanic.com',
+            cc: MAIL_CONFIG.ccSistemas,
             subject: `NOTIFICACION - REPORTE DE DEPOSITOS BANCARIOS SIN IDENTIFICAR`, // Asunto del correo
             html: contenidoHTML // Contenido del correo en texto plano
         };
 
         // Enviar el correo electrónico
-        const info = await transporter.sendMail(mailOptions);
+        const info = await sendMail(mailOptions);
         console.log('CORREO ENVIADO:', info.response);
     } catch (error) {
         console.error('ERROR AL ENVIAR EL CORREO: ', error);
+    }
+};
+
+const mail_simple_notification = async (datos) => {
+    try {
+        const contenidoHTML = await getSimpleNotification(datos);
+
+        const mailOptions = {
+            from: MAIL_CONFIG.fromDefault,
+            to: datos.to,
+            cc: datos.cc || '',
+            subject: datos.subject || 'NOTIFICACION - MAZATLAN INTERNATIONAL CENTER',
+            html: contenidoHTML,
+            attachments: [
+                {
+                    filename: 'logomic_correos.png',
+                    path: './public/assets/images/logomic_correos.png',
+                    cid: 'logoMIC'
+                }
+            ]
+        };
+
+        const info = await sendMail(mailOptions);
+        console.log('CORREO ENVIADO:', info.response);
+        return info;
+    } catch (error) {
+        console.error('ERROR AL ENVIAR EL CORREO: ', error);
+        throw new Error(`ERROR AL ENVIAR EL CORREO SIMPLE: ${error.message}`);
     }
 };
 
@@ -288,9 +413,9 @@ const mail_web_contactus = async (datos) => {
 
         // Configuración del correo
         const mailOptions = {
-            from: 'no-reply@mazatlanic.com',
+            from: MAIL_CONFIG.fromDefault,
             to: datos.correo,
-            cc: 'susana.arizmendi@mazatlanic.com',
+            cc: MAIL_CONFIG.ccWebContact,
             subject: '¡GRACIAS POR REGISTRARSE PARA REALIZAR SU PROXIMO EVENTO!',
             html: contenidoHTML,
             attachments: [
@@ -303,7 +428,7 @@ const mail_web_contactus = async (datos) => {
         };
 
         // Enviar el correo
-        const info = await transporter.sendMail(mailOptions);
+        const info = await sendMail(mailOptions);
         console.log('CORREO ENVIADO:', info.response);
 
     } catch (error) {
@@ -319,9 +444,9 @@ const mail_web_reminder_contactus = async (datos) => {
 
         // Configuración del correo
         const mailOptions = {
-            from: 'no-reply@mazatlanic.com',
+            from: MAIL_CONFIG.fromDefault,
             to: datos.correo,
-            cc: 'susana.arizmendi@mazatlanic.com',
+            cc: MAIL_CONFIG.ccWebContact,
             subject: '¡GRACIAS POR CONTACTARNOS NUEVAMENTE!',
             html: contenidoHTML,
             attachments: [
@@ -334,7 +459,7 @@ const mail_web_reminder_contactus = async (datos) => {
         };
 
         // Enviar el correo
-        const info = await transporter.sendMail(mailOptions);
+        const info = await sendMail(mailOptions);
         console.log('CORREO ENVIADO:', info.response);
 
     } catch (error) {
@@ -349,6 +474,7 @@ module.exports = {
     mail_cancelacionCotizacion,
     mail_enviar_recibodeingreso,
     mail_enviar_reportebancos,
+    mail_simple_notification,
     mail_web_contactus,
     mail_web_reminder_contactus
 };
