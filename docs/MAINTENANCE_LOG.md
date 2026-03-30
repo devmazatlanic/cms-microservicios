@@ -51,6 +51,30 @@ Todo lo no confirmado debe tratarse como pendiente de validacion.
 
 ## Intervenciones
 
+### 2026-03-30 - Adaptador defensivo para modelos legacy MySQL
+- Objetivo: evitar fallas de runtime cuando `databases/config.js` no expone `connection` con el contrato esperado por los modelos legacy.
+- Archivos modificados:
+  - `helpers/db_connection.js`
+  - `models/autorizaciones.js`
+  - `models/codigoqrs.js`
+  - `models/dispositivos.js`
+  - `models/eventos.js`
+  - `models/notificaciones.js`
+  - `models/pantallas.js`
+  - `models/perfiles.js`
+  - `models/reportes.js`
+  - `models/tarjetas.js`
+  - `models/tipo_dispositivos.js`
+- Cambio aplicado:
+  - se agrego un adaptador `connection.query(...)` compatible con exportaciones tipo `connection`, `query` o pool directo
+  - los modelos legacy ahora dependen de un punto unico de compatibilidad
+  - `controllers/web.js` ahora responde `500` controlado si falla la lectura de eventos
+- Riesgo: bajo a medio, por tratarse de una capa compartida de acceso a base de datos.
+- Validacion sugerida:
+  - carga local de los modelos legacy
+  - prueba real de `GET /api/web/events/today`
+  - prueba real de un endpoint adicional legacy que use `connection.query(...)`
+
 ### 2026-03-25 - Estabilizacion inicial del flujo WhatsApp
 - Objetivo: corregir dos fallas de runtime en `helpers/tools.js`.
 - Archivos modificados:
