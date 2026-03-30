@@ -7,9 +7,8 @@ El historial de cambios aplicados se conserva en `MAINTENANCE_LOG.md`.
 - Secretos sensibles detectados en codigo o repositorio:
   SMTP, `.env`, certificados y configuraciones que aun requieren estrategia segura por ambiente.
 - El modulo de correo ya puede configurarse por entorno, pero sigue pendiente definir un proveedor SMTP/transaccional productivo con mejor entregabilidad y menor riesgo de bloqueo que un relay de buzon generalista.
-- El endpoint interno `/api/mail/simple` no tiene autenticacion propia; si se expone fuera de una red confiable puede usarse para envios no autorizados.
-- CORS configurado dos veces y finalmente abierto globalmente.
-- HTTPS preparado pero deshabilitado; el servidor actual usa HTTP.
+- El endpoint publico `/api/web/events/contactus` sigue sin controles anti-abuso visibles como rate limit, captcha u otra verificacion de origen humano.
+- La estrategia final de HTTPS en produccion sigue pendiente de activacion y validacion en el hosting/proxy.
 
 ## Prioridad Media
 - `controllers/pantallas.js` usa `GET` leyendo `request.body`.
@@ -40,6 +39,8 @@ El historial de cambios aplicados se conserva en `MAINTENANCE_LOG.md`.
 - Confirmar que no existan consumidores activos de `/api/notificaciones/*` tras la desactivacion temporal.
 - Validar en entorno real el comportamiento del webhook cuando lleguen multiples mensajes o multiples `changes` en una sola notificacion.
 - Confirmar el proveedor SMTP productivo definitivo y la autenticacion SPF/DKIM/DMARC del dominio usado para correo transaccional.
+- Confirmar que el proxy o hosting productivo envie correctamente `x-forwarded-proto` y permita activar `APP_FORCE_HTTPS` sin romper trafico legitimo.
+- Confirmar si otros endpoints como `/api/ingresos/recibo` deben tratarse tambien como internos y protegerse con API key.
 - Comando oficial de arranque.
 - `package.json` real.
 - Infraestructura de despliegue y proxy/TLS.

@@ -7,13 +7,15 @@
 - Validar con consultas reales el comportamiento del pool MySQL y de los modelos criticos.
 - Definir proveedor SMTP/transaccional definitivo para produccion y una estrategia formal para reemplazar el servicio de correo de notificaciones sin afectar compatibilidad.
 - Definir estrategia para sacar secretos sensibles del repositorio y gestionarlos por ambiente de forma segura.
-- Definir control de acceso para `/api/mail/simple` antes de exponerlo en un entorno no aislado: API key, allowlist de IPs o restriccion de red.
+- Validar y activar estrategia final de HTTPS en produccion con GoDaddy/cPanel o proxy, usando `APP_TRUST_PROXY` y `APP_FORCE_HTTPS` cuando el entorno lo soporte.
+- Agregar controles anti-abuso a `/api/web/events/contactus`: rate limit, captcha o mecanismo equivalente.
 
 ### Media prioridad
 - Validar que no existan consumidores activos de `/api/notificaciones/*` despues de la desactivacion temporal.
 - Validar en entorno real el webhook de WhatsApp cuando Meta agrupe multiples `messages` o `changes` en un solo payload.
 - Diseñar la fase 2 del bot de WhatsApp sobre el menu actual: enrutamiento conversacional, opciones utiles y mejor manejo de contexto.
 - Separar la cuenta tecnica autenticada del remitente visible para correo transaccional, idealmente usando `no-reply@...` para notificaciones automaticas y dejando `info@...` para comunicaciones que admitan respuesta.
+- Confirmar si endpoints adicionales como `/api/ingresos/recibo` deben clasificarse como internos y protegerse con la misma API key.
 - Revisar y normalizar el manejo de error de los flujos activos de correo (`controllers/ingresos.js`, `controllers/web.js`) antes de cualquier reactivacion o migracion del modulo de notificaciones.
 - Corregir la validacion defectuosa en `controllers/notificaciones.js` si el modulo vuelve a habilitarse o se reutiliza parte de su logica.
 - Definir si `routes/helpers.js` debe montarse o eliminarse en una fase futura.

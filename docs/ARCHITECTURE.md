@@ -58,6 +58,11 @@ Arquitectura tipo MVC ligera con responsabilidades separadas por carpeta, pero s
 - El proveedor SMTP productivo sigue pendiente de definicion formal; la implementacion actual permite cambiar de relay o servicio transaccional sin tocar controladores.
 - Existe un endpoint interno `POST /api/mail/simple` para notificaciones breves con plantilla corporativa reutilizable.
 
+## Nota sobre seguridad perimetral
+- El servicio ya admite normalizacion de CORS por origen y proteccion por API key para endpoints internos confirmados.
+- La terminacion TLS recomendada para este proyecto es en el hosting o reverse proxy; la app mantiene soporte opcional para certificados locales solo si se habilita por configuracion.
+- El servicio puede confiar en `x-forwarded-proto` y cabeceras de proxy mediante `APP_TRUST_PROXY`, pendiente de validacion final en produccion.
+
 ## Nota sobre WhatsApp
 - El modulo de WhatsApp funciona como integracion interna para envio transaccional y recepcion de webhooks.
 - La bitacora principal visible es `whatsapp_requests`.

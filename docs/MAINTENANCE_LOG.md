@@ -413,3 +413,34 @@ Todo lo no confirmado debe tratarse como pendiente de validacion.
   - se conserva como pendiente activo la fase 2 del bot de WhatsApp
   - se mantiene pendiente el rediseño o reemplazo formal del modulo de notificaciones/correo legado
 - Riesgo: bajo, documental.
+
+### 2026-03-27 - Fase 1 de seguridad perimetral e interna
+- Objetivo: corregir CORS efectivo, preparar soporte de proxy/HTTPS y proteger endpoints internos confirmados con API key.
+- Archivos modificados:
+  - `config/server.js`
+  - `routes/mail.js`
+  - `routes/whatsapp.js`
+  - `helpers/internal_api_key.js`
+  - `.env`
+  - `docs/README.md`
+  - `docs/PROJECT_CONTEXT.md`
+  - `docs/REPO_MAP.md`
+  - `docs/ARCHITECTURE.md`
+  - `docs/SETUP.md`
+  - `docs/KNOWN_ISSUES.md`
+  - `docs/PENDING_ITEMS.md`
+  - `docs/MAINTENANCE_LOG.md`
+- Cambio aplicado:
+  - se dejo una sola politica CORS para HTTP, con normalizacion de origenes y eliminacion del comportamiento abierto por `cors()`
+  - se agregaron headers basicos de seguridad y limite al `json` body
+  - se incorporo soporte configurable para `trust proxy`, redireccion o exigencia de HTTPS y opcion de HTTPS local solo por bandera
+  - se deshabilito por defecto la ruta diagnostica `/ipdevice`
+  - se protegieron con API key los endpoints internos confirmados:
+    - `/api/mail/simple`
+    - `/api/whatsapp/send_notification`
+- Riesgo: medio, porque los clientes internos ahora deben enviar `x-api-key` o `Authorization: Bearer ...`, y la activacion final de HTTPS depende del entorno productivo.
+- Validacion sugerida:
+  - probar `/api/mail/simple` sin API key y con API key
+  - probar `/api/whatsapp/send_notification` sin API key y con API key
+  - validar desde navegador un origen permitido y uno no permitido
+  - validar en produccion cabecera `x-forwarded-proto` antes de activar `APP_FORCE_HTTPS`

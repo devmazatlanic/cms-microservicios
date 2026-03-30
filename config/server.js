@@ -4,29 +4,64 @@ const cors = require('cors');
 const http = require('http');
 const https = require('https');
 const io = require('socket.io');
-const api_cors = JSON.parse(process.env.API_CORS);
-const socket_cors = JSON.parse(process.env.SOCKET_CORS);
+
+const parseJsonConfig = (value, fallback) => {
+    try {
+        return value ? JSON.parse(value) : fallback;
+    } catch (error) {
+        console.warn(`[SERVER] No se pudo parsear configuracion JSON: ${error.message}`);
+        return fallback;
+    }
+};
+
+const getEnvBoolean = (value, defaultValue = false) => {
+    if (value === undefined || value === null || value === '') {
+        return defaultValue;
+    }
+
+    const normalized = String(value).trim().toLowerCase();
+
+    if (['true', '1', 'yes', 'on'].includes(normalized)) {
+        return true;
+    }
+
+    if (['false', '0', 'no', 'off'].includes(normalized)) {
+        return false;
+    }
+
+    return defaultValue;
+};
+
+const normalizeOrigin = (origin) => String(origin || '').trim().replace(/\/+$/, '');
+const normalizeOrigins = (origins = []) => {
+    if (!Array.isArray(origins)) {
+        return [];
+    }
+
+    return origins.map(normalizeOrigin).filter(Boolean);
+};
+
+const api_cors = parseJsonConfig(process.env.API_CORS, { origins: [], allowCredentials: false });
+const socket_cors = parseJsonConfig(process.env.SOCKET_CORS, { origins: [], allowCredentials: false });
 
 class Server {
 
     constructor() {
-        const certs = this.loadCerts();
-        const corsConfig = JSON.parse(process.env.SOCKET_CORS);
         this.app = express();
-        this.app.use(cors({
-            // origin: api_cors.origins,
-            methods: ['GET', 'POST'],
-            credentials: api_cors.allowCredentials
-        }));
         this.port = process.env.PORT;
-        // this.server = certs
-        //    ? https.createServer(certs, this.app)
-        //    : http.createServer(this.app);
-        this.server = http.createServer(this.app);
+        this.apiCorsOrigins = normalizeOrigins(api_cors.origins);
+        this.socketCorsOrigins = normalizeOrigins(socket_cors.origins);
+        this.forceHttps = getEnvBoolean(process.env.APP_FORCE_HTTPS, false);
+        this.enableHttpsServer = getEnvBoolean(process.env.APP_ENABLE_HTTPS_SERVER, false);
+        this.enableIpDeviceRoute = getEnvBoolean(process.env.APP_ENABLE_IPDEVICE_ROUTE, false);
+
+        this.app.disable('x-powered-by');
+        this.configureTrustProxy();
+        this.server = this.buildHttpServer();
 
         this.io = io(this.server, {
             cors: {
-                origin: socket_cors.origins,
+                origin: this.socketCorsOriginResolver.bind(this),
                 methods: ['GET', 'POST'],
                 credentials: socket_cors.allowCredentials,
             }
@@ -47,23 +82,135 @@ class Server {
         this.routes();
     }
 
+    configureTrustProxy() {
+        const trustProxyValue = String(process.env.APP_TRUST_PROXY || '').trim();
+
+        if (!trustProxyValue) {
+            return;
+        }
+
+        if (getEnvBoolean(trustProxyValue, false) === true) {
+            this.app.set('trust proxy', true);
+            return;
+        }
+
+        if (getEnvBoolean(trustProxyValue, true) === false) {
+            this.app.set('trust proxy', false);
+            return;
+        }
+
+        const numericValue = Number.parseInt(trustProxyValue, 10);
+        if (Number.isFinite(numericValue)) {
+            this.app.set('trust proxy', numericValue);
+            return;
+        }
+
+        this.app.set('trust proxy', trustProxyValue);
+    }
+
+    buildHttpServer() {
+        if (!this.enableHttpsServer) {
+            return http.createServer(this.app);
+        }
+
+        const certs = this.loadCerts();
+        if (!certs) {
+            return http.createServer(this.app);
+        }
+
+        return https.createServer(certs, this.app);
+    }
+
     loadCerts() {
+        const keyPath = process.env.APP_HTTPS_KEY_PATH || './certs/privkey.pem';
+        const certPath = process.env.APP_HTTPS_CERT_PATH || './certs/fullchain.pem';
+
         try {
             return {
-                key: fs.readFileSync('./certs/privkey.pem'),
-                cert: fs.readFileSync('./certs/fullchain.pem')
+                key: fs.readFileSync(keyPath),
+                cert: fs.readFileSync(certPath)
             };
         } catch (err) {
-            console.warn('⚠️ Certificados no encontrados. Usando HTTP.');
+            console.warn(`⚠️ Certificados no encontrados o invalidos (${keyPath}, ${certPath}). Usando HTTP.`);
             return null;
         }
     }
 
+    apiCorsOriginResolver(origin, callback) {
+        if (!origin) {
+            return callback(null, true);
+        }
+
+        const normalizedOrigin = normalizeOrigin(origin);
+        const isAllowedOrigin = this.apiCorsOrigins.includes(normalizedOrigin);
+
+        if (isAllowedOrigin) {
+            return callback(null, true);
+        }
+
+        console.warn(`[CORS] Origen no permitido: ${normalizedOrigin}`);
+        return callback(null, false);
+    }
+
+    socketCorsOriginResolver(origin, callback) {
+        if (!origin) {
+            return callback(null, true);
+        }
+
+        const normalizedOrigin = normalizeOrigin(origin);
+        const isAllowedOrigin = this.socketCorsOrigins.includes(normalizedOrigin);
+
+        if (isAllowedOrigin) {
+            return callback(null, true);
+        }
+
+        console.warn(`[SOCKET_CORS] Origen no permitido: ${normalizedOrigin}`);
+        return callback('Not allowed by socket CORS', false);
+    }
+
+    setBasicSecurityHeaders(request, response, next) {
+        response.setHeader('X-Content-Type-Options', 'nosniff');
+        response.setHeader('X-Frame-Options', 'SAMEORIGIN');
+        response.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+        response.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+        next();
+    }
+
+    isHttpsRequest(request) {
+        if (request.secure) {
+            return true;
+        }
+
+        const forwardedProto = String(request.headers['x-forwarded-proto'] || '').split(',')[0].trim().toLowerCase();
+        return forwardedProto === 'https';
+    }
+
+    enforceHttps(request, response, next) {
+        if (!this.forceHttps || this.isHttpsRequest(request)) {
+            return next();
+        }
+
+        if (['GET', 'HEAD'].includes(request.method) && request.headers.host) {
+            return response.redirect(308, `https://${request.headers.host}${request.originalUrl}`);
+        }
+
+        return response.status(426).json({
+            next: false,
+            message: 'HTTPS REQUIRED.'
+        });
+    }
+
     middlewares() {
-        // CORS
-        this.app.use(cors());
+        this.app.use(this.setBasicSecurityHeaders.bind(this));
+        this.app.use(cors({
+            origin: this.apiCorsOriginResolver.bind(this),
+            methods: ['GET', 'POST'],
+            credentials: api_cors.allowCredentials,
+            optionsSuccessStatus: 204
+        }));
+        this.app.use(this.enforceHttps.bind(this));
         // PARSEO Y LECTURA DEL BODY
-        this.app.use(express.json());
+        this.app.use(express.json({ limit: '100kb' }));
         // DIRECTORIO PUBLICO
         this.app.use(express.static('public'));
 
@@ -80,18 +227,17 @@ class Server {
         //     req.clientIp = clientIp;
         //     next();
         // });
-
-
-
-        this.app.get('/ipdevice', async (req, res) => {
-            const ip =
-                req.headers['cf-connecting-ip'] ||
-                req.headers['x-real-ip'] ||
-                req.headers['x-forwarded-for'] ||
-                req.socket.remoteAddress || '';
-            console.log(ip);
-            res.send(`Client IP: ${ip}`);
-        });
+        if (this.enableIpDeviceRoute) {
+            this.app.get('/ipdevice', async (req, res) => {
+                const ip =
+                    req.headers['cf-connecting-ip'] ||
+                    req.headers['x-real-ip'] ||
+                    req.headers['x-forwarded-for'] ||
+                    req.socket.remoteAddress || '';
+                console.log(ip);
+                res.send(`Client IP: ${ip}`);
+            });
+        }
     }
 
     routes() {

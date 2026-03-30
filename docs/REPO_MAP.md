@@ -46,7 +46,7 @@
 - Socket server: inicializado desde `server.initSocket()`
 
 ## Configuracion clave
-- `.env`: `PORT`, `API_CORS`, `SOCKET_CORS`, `WHATSAPP_VERIFY_TOKEN`, `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_API_VERSION`
+- `.env`: `PORT`, `API_CORS`, `SOCKET_CORS`, `APP_TRUST_PROXY`, `APP_FORCE_HTTPS`, `APP_ENABLE_HTTPS_SERVER`, `APP_HTTPS_KEY_PATH`, `APP_HTTPS_CERT_PATH`, `APP_ENABLE_IPDEVICE_ROUTE`, `INTERNAL_API_KEY`, `WHATSAPP_VERIFY_TOKEN`, `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_API_VERSION`
 - `.env`: `MAIL_*` para transporte SMTP y remitentes visibles
 - `databases/config.js`: conexion o wrapper de MySQL
 - `config/mail.js`: SMTP y envio de correos
@@ -59,5 +59,6 @@
 - `controllers/mail` consume `config/mail` y usa plantilla corporativa simple para notificaciones transaccionales
 - `models` consultan MySQL
 - `helpers/whatsapp` llama a Meta
+- `helpers/internal_api_key` protege endpoints internos confirmados mediante `x-api-key` o `Authorization: Bearer`
 - `config/mail` llama a SMTP y usa `views/emails`
 - `docs/*` concentra trazabilidad tecnica y seguimiento incremental del mantenimiento

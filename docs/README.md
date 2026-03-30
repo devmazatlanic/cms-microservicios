@@ -51,6 +51,7 @@ Pendiente de validacion:
 - Se detectaron endpoints con efectos laterales reales, incluyendo mensajes de WhatsApp.
 - El modulo de correo ya se configura por variables `MAIL_*`, por lo que el proveedor SMTP puede cambiarse por ambiente sin modificar codigo.
 - Existe un endpoint interno adicional para correo simple transaccional bajo `/api/mail/simple`.
+- Los endpoints internos sensibles ya admiten proteccion por `x-api-key` o `Authorization: Bearer ...`.
 - El modulo de `notificaciones` esta deshabilitado temporalmente y sus rutas responden `410 Gone`.
 - El webhook de WhatsApp ya sincroniza `message_status` en `whatsapp_requests` cuando Meta envia `statuses`.
 

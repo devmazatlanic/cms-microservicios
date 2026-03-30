@@ -17,6 +17,13 @@
 - `PORT`
 - `API_CORS`
 - `SOCKET_CORS`
+- `APP_TRUST_PROXY`
+- `APP_FORCE_HTTPS`
+- `APP_ENABLE_HTTPS_SERVER`
+- `APP_HTTPS_KEY_PATH`
+- `APP_HTTPS_CERT_PATH`
+- `APP_ENABLE_IPDEVICE_ROUTE`
+- `INTERNAL_API_KEY`
 - `WHATSAPP_VERIFY_TOKEN`
 - `WHATSAPP_ACCESS_TOKEN`
 - `WHATSAPP_PHONE_NUMBER_ID`
@@ -70,6 +77,13 @@ Pendiente de validacion:
 - Si el relay actual es GoDaddy o Microsoft 365, conviene mantener limites conservadores de envio y revisar autenticacion SPF, DKIM y DMARC.
 - El endpoint interno `POST /api/mail/simple` reutiliza este mismo transporte SMTP.
 
+## Nota sobre seguridad
+- `APP_TRUST_PROXY` permite que la app reconozca correctamente cabeceras del proxy o hosting.
+- `APP_FORCE_HTTPS` deja preparada la app para redirigir o exigir HTTPS cuando el entorno ya lo soporte de forma estable.
+- `APP_ENABLE_HTTPS_SERVER` solo deberia activarse si realmente se quiere terminar TLS dentro de Node.
+- `INTERNAL_API_KEY` protege endpoints internos como `/api/mail/simple` y `/api/whatsapp/send_notification`.
+- Los clientes internos pueden enviar la clave por `x-api-key` o `Authorization: Bearer ...`.
+
 ## Riesgos o huecos en instalacion
 - Pendiente de validacion: `package.json` no presente en el analisis.
 - Pendiente de validacion: version de Node recomendada.
@@ -77,3 +91,4 @@ Pendiente de validacion:
 - Posible dependencia de infraestructura local/red privada para la base de datos.
 - Riesgo alto si se usan credenciales versionadas sin rotacion.
 - Pendiente de validacion: proveedor SMTP productivo definitivo y estrategia de reputacion/entregabilidad.
+- Pendiente de validacion: configuracion final de proxy/HTTPS en el hosting productivo.
