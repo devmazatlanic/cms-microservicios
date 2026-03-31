@@ -1,4 +1,4 @@
-const { request, response } = require('express');
+﻿const { request, response } = require('express');
 const { send_message } = require('../helpers/whatsapp');
 const { message_text, message_document, message_templete } = require("../shared/whatsapp/custom_message");
 const { buildComponent, process_response } = require("../helpers/tools");
@@ -235,6 +235,7 @@ const send_notification = async (request, response) => {
                         break;
                     case 'notify_autorizacion_personal':
                     case 'notify_ordenservicio':
+                    case 'notify_bitacora_ordenservicio':
                         if ((body.components.length === 0) || (!body.link)) {
                             return response.status(400).json({
                                 next: false,
@@ -253,7 +254,6 @@ const send_notification = async (request, response) => {
                 }
 
                 _config.components = [];
-                // Si vienen parámetros para el body…
                 if (body.headers.length > 0) {
                     _config.components.push(buildComponent("header", body.headers));
                 }
@@ -265,6 +265,7 @@ const send_notification = async (request, response) => {
                 switch (body.name) {
                     case 'notify_autorizacion_personal':
                     case 'notify_ordenservicio':
+                    case 'notify_bitacora_ordenservicio':
                         if (body.link.length > 0) {
                             _config.components.push({
                                 type: 'button',
@@ -331,7 +332,7 @@ const send_notification = async (request, response) => {
 
         response.status(responseStatus).json({
             next: false,
-            message: 'Hubo un error al ejecutar la aplicacioón para enviar mensaje por whatsapp.',
+            message: 'Hubo un error al ejecutar la aplicacion para enviar mensaje por whatsapp.',
             meta_status_code: error.statusCode || null,
             meta_response: error.metaResponse || null,
             stored_request_id: error.storedRequest?.insertId || null,
@@ -346,3 +347,4 @@ module.exports = {
     received_message,
     send_notification
 }
+
