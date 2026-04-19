@@ -1,5 +1,58 @@
-/databases
-/node_modules
-package-lock.json
-package.json
+node_modules/
+
+# Environment / secrets
 .env
+.env.*
+!.env.example
+!.env.*.example
+
+# TLS / credentials
+certs/*.pem
+certs/*.key
+certs/*.crt
+certs/*.p12
+certs/*.pfx
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Runtime / temp
+tmp/
+temp/
+*.tmp
+*.pid
+*.pid.lock
+*.seed
+
+# Build / coverage
+coverage/
+.nyc_output/
+dist/
+build/
+
+# Local database artifacts
+*.sql
+*.sqlite
+*.sqlite3
+*.db
+databases/*.sql
+databases/*.sqlite*
+databases/*.db
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo

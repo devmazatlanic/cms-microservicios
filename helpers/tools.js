@@ -253,6 +253,66 @@ const buildAuthReasonPrompt = ({ decisionLabel, idAuthRequest, details }) => {
     return parts.join('\n');
 };
 
+const buildAuthSubmitErrorMeta = (error) => {
+    if (!error || typeof error !== 'object') {
+        return {
+            message: String(error || 'unknown error'),
+            code: null,
+            errno: null,
+            sql_state: null,
+            sql_message: null
+        };
+    }
+
+    return {
+        message: String(error.message || 'unknown error'),
+        code: typeof error.code === 'string' ? error.code : null,
+        errno: Number.isFinite(error.errno) ? error.errno : null,
+        sql_state: typeof error.sqlState === 'string' ? error.sqlState : null,
+        sql_message: typeof error.sqlMessage === 'string' ? error.sqlMessage : null
+    };
+};
+
+const resolveAuthSubmitErrorMessage = ({ error, idAuthRequest }) => {
+    const code = typeof error?.code === 'string' ? error.code : '';
+
+    if (code === 'AUTH_REQUEST_NOT_FOUND') {
+        return `No existe la solicitud ${idAuthRequest}. Verifica el codigo e intenta de nuevo.`;
+    }
+
+    if (code === 'AUTH_REQUEST_INVALID') {
+        return 'El codigo de solicitud no es valido. Contacta a TI para revisar la notificacion.';
+    }
+
+    if (code === 'AUTH_USER_INVALID') {
+        return 'El codigo de usuario no es valido. Contacta a TI para revisar la notificacion.';
+    }
+
+    if (code === 'AUTH_DECISION_INVALID') {
+        return 'La decision enviada no es valida. Intenta de nuevo desde los botones Autorizar/Rechazar.';
+    }
+
+    if (code === 'ER_NO_SUCH_TABLE') {
+        const rawMessage = String(error?.sqlMessage || error?.message || '');
+
+        if (rawMessage.includes('tcr_auth_request_approvers')) {
+            return 'No existe la tabla tcr_auth_request_approvers en la base de datos. Contacta a TI.';
+        }
+
+        return 'No se encontro una tabla requerida para registrar la autorizacion. Contacta a TI.';
+    }
+
+    if (['ER_TABLEACCESS_DENIED_ERROR', 'ER_DBACCESS_DENIED_ERROR', 'ER_ACCESS_DENIED_ERROR'].includes(code)) {
+        return 'El servicio no tiene permisos para registrar aprobaciones. Contacta a TI.';
+    }
+
+    if (['ER_NO_REFERENCED_ROW_2', 'ER_ROW_IS_REFERENCED_2'].includes(code)) {
+        return 'No pude registrar la respuesta porque la solicitud o el usuario no existen en la base de datos. Contacta a TI.';
+    }
+
+    return 'No pude registrar tu respuesta en este momento. Intenta de nuevo o contacta a TI.';
+};
+
 const getBotMenuText = () => {
     return [
         'Hola. Este canal procesa notificaciones enviadas por el sistema y respuestas sobre mensajes previos.',
@@ -383,9 +443,10 @@ const handleAuthReasonIfPending = async ({ message, phone_number, text }) => {
 
     const idAuthRequest = Number(pendingPayload?.id_auth_request);
     const estado = Number(pendingPayload?.estado);
+    const idUsuario = Number(pendingPayload?.id_usuario);
     const decisionLabel = pendingPayload?.decision_label || null;
 
-    if (!Number.isFinite(idAuthRequest) || !Number.isFinite(estado)) {
+    if (!Number.isFinite(idAuthRequest) || !Number.isFinite(estado) || !Number.isFinite(idUsuario)) {
         return buildManagedTextResponse({
             number: phone_number,
             name: 'auth_request_invalid_pending',
@@ -451,8 +512,7 @@ const handleAuthReasonIfPending = async ({ message, phone_number, text }) => {
     try {
         const submitResult = await submitAuthRequestApproverDecision({
             id_auth_request: idAuthRequest,
-            id_usuario: pendingPayload?.id_usuario || null,
-            phone_number,
+            id_usuario: idUsuario,
             comentario: reasonText,
             estado
         });
@@ -494,16 +554,20 @@ const handleAuthReasonIfPending = async ({ message, phone_number, text }) => {
             }
         });
     } catch (error) {
-        console.error('Error al registrar decision de autorizacion:', error.message);
+        const errorMeta = buildAuthSubmitErrorMeta(error);
+        console.error('Error al registrar decision de autorizacion:', {
+            id_auth_request: idAuthRequest,
+            error: errorMeta
+        });
         return buildManagedTextResponse({
             number: phone_number,
             name: 'auth_request_error',
-            message: 'No pude registrar tu respuesta en este momento. Intenta de nuevo o contacta a TI.',
+            message: resolveAuthSubmitErrorMessage({ error, idAuthRequest }),
             model: {
                 flow: 'auth_request',
                 event: 'submit_error',
                 id_auth_request: idAuthRequest,
-                error: error.message
+                error: errorMeta
             }
         });
     }
@@ -645,6 +709,22 @@ const process_response = async (_message) => {
                         break;
                     }
 
+                    if (!Number.isFinite(idUsuario)) {
+                        _model = buildManagedTextResponse({
+                            number: _from,
+                            name: 'auth_request_missing_user',
+                            message: 'No pude identificar el usuario autorizador. Asegura que el detalle incluya "Código: <id_auth>-<id_usuario>".',
+                            model: {
+                                flow: 'auth_request',
+                                event: 'missing_user',
+                                id_auth_request: idAuthRequest,
+                                details: parsedDetails,
+                                encoded: encodedDetails
+                            }
+                        });
+                        break;
+                    }
+
                     try {
                         await clear_pending_auth_request({ phone_number: _from });
                     } catch (error) {
@@ -672,7 +752,7 @@ const process_response = async (_message) => {
                                 decision: decision.decision,
                                 decision_label: decision.label,
                                 estado: decision.estado,
-                                id_usuario: Number.isFinite(idUsuario) ? idUsuario : null,
+                                id_usuario: idUsuario,
                                 template: {
                                     name: _name,
                                     params: bodyTexts
@@ -699,7 +779,7 @@ const process_response = async (_message) => {
                             flow: 'auth_request',
                             event: 'prompt_reason',
                             id_auth_request: idAuthRequest,
-                            id_usuario: Number.isFinite(idUsuario) ? idUsuario : null,
+                            id_usuario: idUsuario,
                             estado: decision.estado
                         }
                     });
