@@ -1,6 +1,13 @@
 const macaddress = require('macaddress');
-const { get_message, store_incoming_message } = require('../models/whatsapp');
+const {
+    get_message,
+    store_incoming_message,
+    update_message_status,
+    clear_pending_auth_request,
+    get_pending_auth_request
+} = require('../models/whatsapp');
 const { message_text, message_document } = require("../shared/whatsapp/custom_message");
+const { submitAuthRequestApproverDecision } = require('../models/auth_requests');
 
 const get_mac_address = async () => {
     try {
@@ -62,6 +69,190 @@ const BOT_CONTEXT_NAMES = new Set([BOT_MENU_NAME, BOT_STATUS_NAME]);
 const BOT_MENU_COMMANDS = new Set(['MENU', 'AYUDA', 'INICIO', 'HELP']);
 const BOT_STATUS_COMMANDS = new Set(['ESTADO', 'STATUS']);
 
+const AUTH_REQUEST_TEMPLATE_NAME = 'notify_solicitud_autorizacion';
+const AUTH_REQUEST_PENDING_NAME = 'auth_request_pending';
+const AUTH_REQUEST_PENDING_STATUS = 'awaiting_reason';
+const AUTH_REQUEST_PENDING_TTL_MS = 60 * 60 * 1000; // 60 minutos
+
+const safeJsonParse = (value) => {
+    if (typeof value !== 'string') {
+        return null;
+    }
+
+    try {
+        return JSON.parse(value);
+    } catch (_error) {
+        return null;
+    }
+};
+
+const stripDiacritics = (value) => {
+    if (typeof value !== 'string') {
+        return '';
+    }
+
+    return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+};
+
+const normalizeDetailKey = (value) => {
+    return stripDiacritics(value)
+        .toLowerCase()
+        .replace(/\s+/g, '')
+        .trim();
+};
+
+const parseAuthorizationDetails = (value) => {
+    const details = {};
+    const normalizedValue = normalizeIncomingText(value);
+
+    if (!normalizedValue) {
+        return details;
+    }
+
+    normalizedValue
+        .split('|')
+        .map((part) => part.trim())
+        .filter((part) => part.length > 0)
+        .forEach((part) => {
+            const separatorIndex = part.indexOf(':');
+            if (separatorIndex === -1) {
+                return;
+            }
+
+            const rawKey = part.slice(0, separatorIndex).trim();
+            const rawValue = part.slice(separatorIndex + 1).trim();
+            const key = normalizeDetailKey(rawKey);
+
+            if (!key) {
+                return;
+            }
+
+            details[key] = rawValue;
+        });
+
+    return details;
+};
+
+const extractTemplateBodyTexts = (payload) => {
+    const texts = [];
+    const bodyComponents = payload?.template?.components;
+
+    if (!Array.isArray(bodyComponents)) {
+        return texts;
+    }
+
+    for (const component of bodyComponents) {
+        if (component?.type !== 'body' || !Array.isArray(component?.parameters)) {
+            continue;
+        }
+
+        for (const parameter of component.parameters) {
+            if (parameter?.type === 'text' && typeof parameter?.text === 'string') {
+                const normalized = normalizeIncomingText(parameter.text);
+                if (normalized) {
+                    texts.push(normalized);
+                }
+            }
+        }
+
+        if (texts.length > 0) {
+            break;
+        }
+    }
+
+    return texts;
+};
+
+const resolveAuthDecisionFromText = (value) => {
+    const normalized = normalizeIncomingText(value).toUpperCase();
+
+    if (!normalized) {
+        return null;
+    }
+
+    if (['AUTORIZAR', 'AUTORIZADO', 'APROBAR', 'APROBADO', 'ACEPTAR', 'ACEPTADO'].includes(normalized)) {
+        return { decision: 'approve', estado: 1, label: 'AUTORIZAR' };
+    }
+
+    if (['RECHAZAR', 'RECHAZADO', 'DENEGAR', 'DENEGADO'].includes(normalized)) {
+        return { decision: 'reject', estado: -1, label: 'RECHAZAR' };
+    }
+
+    return null;
+};
+
+const parseNumericIdentifier = (value) => {
+    const cleaned = normalizeIncomingText(value);
+
+    if (!cleaned) {
+        return null;
+    }
+
+    if (/[a-z]/i.test(cleaned)) {
+        return null;
+    }
+
+    const digits = cleaned.replace(/\D/g, '');
+    if (!digits) {
+        return null;
+    }
+
+    const id = Number(digits);
+    return Number.isFinite(id) ? id : null;
+};
+
+const parseAuthRequestIdentifiers = (details = {}) => {
+    const rawValue = details.codigo
+        || details.codigosolicitud
+        || details.idauthrequest
+        || details.idauth
+        || details.idsolicitud
+        || details.solicitud
+        || '';
+
+    const cleaned = normalizeIncomingText(rawValue);
+
+    if (!cleaned) {
+        return { id_auth_request: null, id_usuario: null };
+    }
+
+    const parts = cleaned
+        .split(/[-–—]/)
+        .map((part) => part.trim())
+        .filter((part) => part.length > 0);
+
+    const id_auth_request = parseNumericIdentifier(parts[0] || cleaned);
+    const id_usuario = parts.length > 1 ? parseNumericIdentifier(parts[1]) : null;
+
+    return { id_auth_request, id_usuario };
+};
+
+const buildAuthReasonPrompt = ({ decisionLabel, idAuthRequest, details }) => {
+    const folio = details?.folio || details?.folioprincipal || '';
+    const modulo = details?.modulo || details?.tabla || '';
+    const accion = details?.accion || '';
+
+    const parts = [];
+
+    parts.push(`Seleccionaste: ${decisionLabel}.`);
+
+    if (Number.isFinite(idAuthRequest)) {
+        parts.push(`Solicitud: ${idAuthRequest}.`);
+    }
+
+    const contextParts = [];
+    if (folio) contextParts.push(`Folio ${folio}`);
+    if (modulo) contextParts.push(`Modulo ${modulo}`);
+    if (accion) contextParts.push(`Accion ${accion}`);
+    if (contextParts.length > 0) {
+        parts.push(contextParts.join(' | ') + '.');
+    }
+
+    parts.push('Escribe el motivo de tu decision (o CANCELAR para salir):');
+
+    return parts.join('\n');
+};
+
 const getBotMenuText = () => {
     return [
         'Hola. Este canal procesa notificaciones enviadas por el sistema y respuestas sobre mensajes previos.',
@@ -80,7 +271,7 @@ const getBotStatusText = () => {
     ].join('\n');
 };
 
-const buildManagedTextResponse = ({ number, message, name }) => {
+const buildManagedTextResponse = ({ number, message, name, model = null }) => {
     return {
         payload: message_text({
             number,
@@ -90,7 +281,8 @@ const buildManagedTextResponse = ({ number, message, name }) => {
             type: 'text',
             name,
             model: {
-                internal_name: name
+                internal_name: name,
+                ...(model && typeof model === 'object' ? model : {})
             }
         }
     };
@@ -145,6 +337,178 @@ const resolveBotResponse = ({ text, number, preferMenuOnUnknown = false }) => {
     return buildBotFallbackResponse(number);
 };
 
+const handleAuthReasonIfPending = async ({ message, phone_number, text }) => {
+    if (message?.type !== 'text') {
+        return null;
+    }
+
+    const pendingRows = await get_pending_auth_request({ phone_number });
+    if (!Array.isArray(pendingRows) || pendingRows.length === 0) {
+        return null;
+    }
+
+    const pendingRow = pendingRows[0];
+    const pendingPayload = safeJsonParse(pendingRow?.model) || {};
+
+    if (pendingPayload?.flow !== 'auth_request' || pendingRow?.name !== AUTH_REQUEST_PENDING_NAME) {
+        return null;
+    }
+
+    const initiatedAt = typeof pendingPayload?.initiated_at === 'string' ? Date.parse(pendingPayload.initiated_at) : NaN;
+    const isExpired = Number.isFinite(initiatedAt)
+        ? Date.now() - initiatedAt > AUTH_REQUEST_PENDING_TTL_MS
+        : false;
+
+    if (isExpired) {
+        try {
+            await update_message_status({
+                id_message: pendingRow?.id_message || null,
+                message_status: 'expired'
+            });
+        } catch (error) {
+            console.error('No se pudo marcar flujo expirado:', error.message);
+        }
+
+        return buildManagedTextResponse({
+            number: phone_number,
+            name: 'auth_request_expired',
+            message: 'La solicitud expiro. Vuelve a seleccionar Autorizar/Rechazar desde la notificacion original.',
+            model: {
+                flow: 'auth_request',
+                event: 'expired',
+                id_auth_request: pendingPayload?.id_auth_request || null
+            }
+        });
+    }
+
+    const idAuthRequest = Number(pendingPayload?.id_auth_request);
+    const estado = Number(pendingPayload?.estado);
+    const decisionLabel = pendingPayload?.decision_label || null;
+
+    if (!Number.isFinite(idAuthRequest) || !Number.isFinite(estado)) {
+        return buildManagedTextResponse({
+            number: phone_number,
+            name: 'auth_request_invalid_pending',
+            message: 'No pude procesar esta solicitud de autorizacion. Contacta a TI para revisar la configuracion.',
+            model: {
+                flow: 'auth_request',
+                event: 'invalid_pending',
+                pending: pendingPayload
+            }
+        });
+    }
+
+    const reasonText = normalizeIncomingText(text);
+    if (!reasonText) {
+        return buildManagedTextResponse({
+            number: phone_number,
+            name: 'auth_request_reason_required',
+            message: 'Necesito que escribas el motivo para continuar con la solicitud.',
+            model: {
+                flow: 'auth_request',
+                event: 'reason_required',
+                id_auth_request: idAuthRequest
+            }
+        });
+    }
+
+    const normalizedReasonCommand = reasonText.toUpperCase();
+    if (normalizedReasonCommand === 'CANCELAR') {
+        try {
+            await update_message_status({
+                id_message: pendingRow?.id_message || null,
+                message_status: 'cancelled'
+            });
+        } catch (error) {
+            console.error('No se pudo cancelar flujo pendiente:', error.message);
+        }
+
+        return buildManagedTextResponse({
+            number: phone_number,
+            name: 'auth_request_cancelled',
+            message: 'Solicitud cancelada. Si necesitas responder, vuelve a seleccionar Autorizar/Rechazar desde la notificacion original.',
+            model: {
+                flow: 'auth_request',
+                event: 'cancelled',
+                id_auth_request: idAuthRequest
+            }
+        });
+    }
+
+    if (BOT_MENU_COMMANDS.has(normalizedReasonCommand) || BOT_STATUS_COMMANDS.has(normalizedReasonCommand)) {
+        return buildManagedTextResponse({
+            number: phone_number,
+            name: 'auth_request_reason_pending',
+            message: 'Tienes una solicitud de autorizacion pendiente. Escribe el motivo para continuar o escribe CANCELAR para salir.',
+            model: {
+                flow: 'auth_request',
+                event: 'reason_pending',
+                id_auth_request: idAuthRequest
+            }
+        });
+    }
+
+    try {
+        const submitResult = await submitAuthRequestApproverDecision({
+            id_auth_request: idAuthRequest,
+            id_usuario: pendingPayload?.id_usuario || null,
+            phone_number,
+            comentario: reasonText,
+            estado
+        });
+
+        try {
+            await update_message_status({
+                id_message: pendingRow?.id_message || null,
+                message_status: 'completed'
+            });
+        } catch (error) {
+            console.error('No se pudo cerrar flujo pendiente:', error.message);
+        }
+
+        if (submitResult?.action === 'already_decided') {
+            return buildManagedTextResponse({
+                number: phone_number,
+                name: 'auth_request_already_decided',
+                message: 'Ya existe una respuesta registrada para esta solicitud.',
+                model: {
+                    flow: 'auth_request',
+                    event: 'already_decided',
+                    id_auth_request: idAuthRequest,
+                    estado_registrado: submitResult?.existing_estado ?? null
+                }
+            });
+        }
+
+        return buildManagedTextResponse({
+            number: phone_number,
+            name: 'auth_request_completed',
+            message: 'Listo. Tu respuesta fue registrada. Gracias.',
+            model: {
+                flow: 'auth_request',
+                event: 'completed',
+                id_auth_request: idAuthRequest,
+                estado,
+                decision_label: decisionLabel,
+                result: submitResult
+            }
+        });
+    } catch (error) {
+        console.error('Error al registrar decision de autorizacion:', error.message);
+        return buildManagedTextResponse({
+            number: phone_number,
+            name: 'auth_request_error',
+            message: 'No pude registrar tu respuesta en este momento. Intenta de nuevo o contacta a TI.',
+            model: {
+                flow: 'auth_request',
+                event: 'submit_error',
+                id_auth_request: idAuthRequest,
+                error: error.message
+            }
+        });
+    }
+};
+
 const process_response = async (_message) => {
     let _text = normalizeIncomingText(GetTextUser(_message));
     let _from = _message.from;
@@ -155,7 +519,25 @@ const process_response = async (_message) => {
     let _url = '';
     let _filename = '';
     let _caption = '';
+    let _context_row = null;
     // console.log("Mensaje recibido de Meta:", body.entry[0].changes[0].value.messages[0]);
+
+    const authReasonResponse = await handleAuthReasonIfPending({
+        message: _message,
+        phone_number: _from,
+        text: _text
+    });
+    if (authReasonResponse) {
+        await storeIncomingForBot({
+            message: _message,
+            phone_number: _from,
+            message_status: 'incoming_auth_reason',
+            message_name: 'auth_request_reason_message',
+            context_id: _id_context || null,
+            extracted_text: _text
+        });
+        return authReasonResponse;
+    }
 
     if (!_id_context) {
         console.log('Bot WhatsApp: mensaje sin context.id, se almacenara y se evaluara menu.');
@@ -200,12 +582,12 @@ const process_response = async (_message) => {
             });
         }
 
-        const _row = _result[0];
-        _type = _row?.type || '';
-        _name = _row?.name || '';
-        _url = _row?.url || null;
-        _filename = _row?.filename || null;
-        _caption = _row?.caption || null;
+        _context_row = _result[0];
+        _type = _context_row?.type || '';
+        _name = _context_row?.name || '';
+        _url = _context_row?.url || null;
+        _filename = _context_row?.filename || null;
+        _caption = _context_row?.caption || null;
 
         await storeIncomingForBot({
             message: _message,
@@ -213,7 +595,7 @@ const process_response = async (_message) => {
             message_status: 'incoming_context_resolved',
             message_name: 'incoming_message_with_context',
             context_id: _id_context,
-            context_row: _row,
+            context_row: _context_row,
             extracted_text: _text
         });
     }
@@ -223,6 +605,106 @@ const process_response = async (_message) => {
         case 'template':
             // AHORA VALIDAMOS EL NOMBRE DE LA PLANTILLA QUE SE ESTA UTILIZANDO
             switch (_name) {
+                case AUTH_REQUEST_TEMPLATE_NAME: {
+                    const decision = resolveAuthDecisionFromText(_text);
+
+                    if (!decision) {
+                        _model = buildManagedTextResponse({
+                            number: _from,
+                            name: 'auth_request_invalid_option',
+                            message: 'Opcion invalida. Usa los botones Autorizar o Rechazar.',
+                            model: {
+                                flow: 'auth_request',
+                                event: 'invalid_option',
+                                received: _text
+                            }
+                        });
+                        break;
+                    }
+
+                    const contextPayload = safeJsonParse(_context_row?.model) || {};
+                    const bodyTexts = extractTemplateBodyTexts(contextPayload);
+                    const encodedDetails = bodyTexts.length > 1 ? bodyTexts[1] : '';
+                    const parsedDetails = parseAuthorizationDetails(encodedDetails);
+                    const identifiers = parseAuthRequestIdentifiers(parsedDetails);
+                    const idAuthRequest = identifiers.id_auth_request;
+                    const idUsuario = identifiers.id_usuario;
+
+                    if (!Number.isFinite(idAuthRequest)) {
+                        _model = buildManagedTextResponse({
+                            number: _from,
+                            name: 'auth_request_missing_code',
+                            message: 'No pude identificar el codigo de la solicitud. Asegura que el detalle incluya "Código: <id_auth>-<id_usuario>".',
+                            model: {
+                                flow: 'auth_request',
+                                event: 'missing_code',
+                                details: parsedDetails,
+                                encoded: encodedDetails
+                            }
+                        });
+                        break;
+                    }
+
+                    try {
+                        await clear_pending_auth_request({ phone_number: _from });
+                    } catch (error) {
+                        console.error('No se pudo limpiar flujo previo de autorizacion:', error.message);
+                    }
+
+                    try {
+                        const pendingIdMessage = _message?.id
+                            ? `auth_pending:${_message.id}`
+                            : `auth_pending:${_from}:${Date.now()}`;
+
+                        await store_incoming_message({
+                            phone_number: _from,
+                            type: _message?.type || 'incoming',
+                            name: AUTH_REQUEST_PENDING_NAME,
+                            id_message: pendingIdMessage,
+                            message_status: AUTH_REQUEST_PENDING_STATUS,
+                            model: {
+                                flow: 'auth_request',
+                                initiated_at: new Date().toISOString(),
+                                context_id: _id_context || null,
+                                pending_id_message: pendingIdMessage,
+                                source_message_id: _message?.id || null,
+                                id_auth_request: idAuthRequest,
+                                decision: decision.decision,
+                                decision_label: decision.label,
+                                estado: decision.estado,
+                                id_usuario: Number.isFinite(idUsuario) ? idUsuario : null,
+                                template: {
+                                    name: _name,
+                                    params: bodyTexts
+                                },
+                                details: {
+                                    encoded: encodedDetails,
+                                    parsed: parsedDetails
+                                }
+                            }
+                        });
+                    } catch (error) {
+                        console.error('No se pudo almacenar flujo pendiente de autorizacion:', error.message);
+                    }
+
+                    _model = buildManagedTextResponse({
+                        number: _from,
+                        name: 'auth_request_prompt_reason',
+                        message: buildAuthReasonPrompt({
+                            decisionLabel: decision.label,
+                            idAuthRequest,
+                            details: parsedDetails
+                        }),
+                        model: {
+                            flow: 'auth_request',
+                            event: 'prompt_reason',
+                            id_auth_request: idAuthRequest,
+                            id_usuario: Number.isFinite(idUsuario) ? idUsuario : null,
+                            estado: decision.estado
+                        }
+                    });
+                    break;
+                }
                 case 'ordenservicio_reenvio':
                     // LA PLANTILLA CUENTA CON BOTONES: SI
                     switch (_text.toUpperCase()) {

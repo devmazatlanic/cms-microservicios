@@ -1,5 +1,8 @@
 const db = require('../databases/config');
 
+const AUTH_PENDING_NAME = 'auth_request_pending';
+const AUTH_PENDING_STATUS = 'awaiting_reason';
+
 /**
  * Almacena un request de WhatsApp en la BD.
  * @param {Object} _data
@@ -99,9 +102,65 @@ const update_message_status = async (_data) => {
   }
 };
 
+/**
+ * Marca cualquier flujo pendiente de autorizacion previo como superseded.
+ * Se usa para garantizar un solo flujo "awaiting_reason" por telefono.
+ * @param {Object} _data
+ */
+const clear_pending_auth_request = async (_data) => {
+  const sql = `
+    UPDATE whatsapp_requests
+    SET message_status = 'superseded'
+    WHERE phone_number = ?
+      AND name = ?
+      AND message_status = ?
+  `;
+
+  try {
+    const result = await db.query(sql, [
+      _data.phone_number || null,
+      AUTH_PENDING_NAME,
+      AUTH_PENDING_STATUS
+    ]);
+    return result;
+  } catch (err) {
+    console.error('Error al limpiar flujo pendiente de autorizacion en whatsapp_requests:', err);
+    throw new Error('No se pudo limpiar el flujo pendiente de autorizacion.');
+  }
+};
+
+/**
+ * Recupera un flujo pendiente de autorizacion para un telefono.
+ * @param {Object} _data
+ */
+const get_pending_auth_request = async (_data) => {
+  const sql = `
+    SELECT *
+    FROM whatsapp_requests
+    WHERE phone_number = ?
+      AND name = ?
+      AND message_status = ?
+    LIMIT 1
+  `;
+
+  try {
+    const rows = await db.query(sql, [
+      _data.phone_number || null,
+      AUTH_PENDING_NAME,
+      AUTH_PENDING_STATUS
+    ]);
+    return rows;
+  } catch (err) {
+    console.error('Error al consultar flujo pendiente de autorizacion en whatsapp_requests:', err);
+    throw new Error('No se pudo obtener el flujo pendiente de autorizacion.');
+  }
+};
+
 module.exports = {
   store_request,
   get_message,
   store_incoming_message,
-  update_message_status
+  update_message_status,
+  clear_pending_auth_request,
+  get_pending_auth_request
 };

@@ -222,6 +222,14 @@ const send_notification = async (request, response) => {
                             });
                         }
                         break;
+                    case 'notify_solicitud_autorizacion':
+                        if (body.components.length < 2) {
+                            return response.status(400).json({
+                                next: false,
+                                message: 'El campo components es obligatorio y debe incluir al menos 2 parametros (nombre y detalle/codigo).'
+                            });
+                        }
+                        break;
                     case 'notify_asignaciones_personal':
                         const faltaComponents = body.components.length === 0;
                         const faltaHeaders = body.headers.length === 0;
@@ -347,4 +355,3 @@ module.exports = {
     received_message,
     send_notification
 }
-
