@@ -246,6 +246,7 @@ const send_notification = async (request, response) => {
                     case 'notify_bitacora_ordenservicio':
                     case 'notify_solicitud_personal_autorizacion':
                     case 'notify_solicitud_personalvariable_autorizacion':
+                    case 'notify_pronostico_flujo_personal':
                         if ((body.components.length === 0) || (!body.link)) {
                             return response.status(400).json({
                                 next: false,
@@ -278,6 +279,7 @@ const send_notification = async (request, response) => {
                     case 'notify_bitacora_ordenservicio':
                     case 'notify_solicitud_personal_autorizacion':
                     case 'notify_solicitud_personalvariable_autorizacion':
+                    case 'notify_pronostico_flujo_personal':
                         if (body.link.length > 0) {
                             _config.components.push({
                                 type: 'button',
