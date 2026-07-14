@@ -21,7 +21,7 @@ const procesure_getDatosGeneralesEventosById = async (evento_id) => {
 const web_today = async () => {
     try {
         const query_result = await new Promise((resolve, reject) => {
-            const query = 'SELECT evento, DATE_FORMAT(fecha_inicio, "%d/%m/%Y") AS fecha, fecha_inicio, fecha_final, descripcion, image, salones FROM web_events WHERE status_alta = 1 AND DATE(fecha_inicio) = CURRENT_DATE() AND NOW() < fecha_final ORDER BY fecha_inicio';
+            const query = 'SELECT evento, DATE_FORMAT(fecha_inicio, "%d/%m/%Y") AS fecha, fecha_inicio, fecha_final, descripcion, image, salones FROM web_events WHERE status_alta = 1 AND fecha_inicio < DATE_ADD(CURDATE(), INTERVAL 1 DAY) AND NOW() < fecha_final ORDER BY fecha_inicio';
             connection.query(query, (error, results) => {
                 if (error) reject(error);
                 else resolve(results);
