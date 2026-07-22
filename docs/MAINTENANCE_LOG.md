@@ -51,6 +51,188 @@ Todo lo no confirmado debe tratarse como pendiente de validacion.
 
 ## Intervenciones
 
+### 2026-07-22 - Alertas WhatsApp por desconexion sostenida de pantallas AirPlay
+- Objetivo: notificar por WhatsApp cuando el ultimo socket de una pantalla AirPlay permanezca desconectado durante 60 segundos.
+- Diagnostico confirmado:
+  - `helpers/sockets.js` ya detectaba cuando desaparecia el ultimo socket asociado a un token, pero no ejecutaba ninguna alerta externa.
+  - los destinatarios se administran en `cat_correosinternos` mediante `id_whatsapp_type_detail` y la plantilla tecnica se administra en `cat_whatsapp_types_details.name`.
+  - el envio existente de WhatsApp permite reutilizar `message_templete()` y `send_message()` con registro en `whatsapp_requests`.
+- Cambios aplicados:
+  - `models/whatsapp.js` agrega una consulta parametrizada con `LEFT JOIN` para obtener la configuracion activa y los destinatarios activos del detalle seleccionado;
+  - `helpers/airplay_notifications.js` programa el aviso, cancela el temporizador cuando la pantalla se reconecta, deduplica telefonos y envia un mensaje por destinatario;
+  - `config/server.js` conecta los callbacks de presencia con el helper de alertas;
+  - `helpers/sockets.js` dispara el callback solamente cuando se desconecta el ultimo socket de la pantalla y cancela alertas al identificar una reconexion;
+  - los metadatos internos guardan token, nombre de pantalla, razon de desconexion, detalle de configuracion y destinatario dentro de la bitacora existente;
+  - se agregaron las variables opcionales `AIRPLAY_DISCONNECT_NOTIFICATION_DETAIL_ID` y `AIRPLAY_DISCONNECT_DELAY_MS`, con valores por defecto `11` y `60000`.
+- Contrato actual de plantilla:
+  - parametro 1 fijo: `ENCARGADO`;
+  - parametro 2 fijo: `MONITOREO PANTALLAS`;
+  - parametro 3 dinamico: `La pantalla {nombre} se desconectó del socket.`
+- Riesgo residual:
+  - los temporizadores son volatiles y se pierden al reiniciar Node;
+  - aun no hay reintentos ni cola persistente para errores transitorios de Meta;
+  - cambiar solo el nombre tecnico de la plantilla no requiere codigo, pero cambiar cantidad, orden o idioma de parametros requiere nueva validacion.
+- Validacion tecnica ejecutada:
+  - `node --check models/whatsapp.js`;
+  - `node --check helpers/airplay_notifications.js`;
+  - `node --check helpers/sockets.js`;
+  - `node --check config/server.js`.
+- Validacion funcional pendiente:
+  - confirmar catalogo activo y destinatarios reales;
+  - desconectar una pantalla y verificar el log de alerta programada;
+  - reconectar antes de 60 segundos y comprobar la cancelacion;
+  - mantener la desconexion y comprobar respuesta de Meta y registro en `whatsapp_requests`.
+
+### 2026-07-22 - Correccion de consulta del detalle de plantilla AirPlay
+- Hallazgo: la consulta recibia el detalle `11`, pero `Number.parseInt(valor, 11)` lo interpretaba usando base 11 y producia el valor decimal `12`.
+- Hallazgo adicional: la consulta usaba `cat_whatsapp_types_details.nombre`, que corresponde al texto visible del catalogo y no al identificador tecnico de Meta.
+- Correccion aplicada:
+  - se cambio la base numerica a `10`;
+  - se cambio la columna consultada a `d.name AS template_name`.
+- Impacto: la alerta ahora puede encontrar el detalle decimal `11` y utilizar el nombre tecnico de plantilla configurado en el catalogo.
+- Riesgo pendiente: confirmar que el registro `11` este activo, que `name` contenga una plantilla aprobada y que el formato de `phone_number` no genere un prefijo duplicado con el ajuste local `+521`.
+- Validacion tecnica ejecutada:
+  - `node --check` en los archivos JavaScript involucrados;
+  - verificacion directa de que `parseInt('11', 10)` produce `11` y `parseInt('11', 11)` produce `12`;
+  - `git diff --check` sin errores.
+
+### 2026-07-21 - Asignacion exclusiva de playlist por pantalla
+- Objetivo: evitar que una pantalla reproduzca varias campañas por acumulacion de relaciones activas en `scr_pantallas_reproducciones`.
+- Diagnostico confirmado:
+  - el alta anterior evitaba duplicar solo la pareja exacta playlist/pantalla, pero no desactivaba otras playlists de la misma pantalla;
+  - el consumidor Node leia todas las relaciones activas y podia devolver contenido combinado;
+  - la activacion manual de una relacion historica podia volver a crear el mismo riesgo.
+- Cambios aplicados:
+  - `cms-mazatlanic/src/application/models/pantallas_model.php` incorpora `replace_pantallas_reproduccion()`, con transaccion, normalizacion de IDs y conservacion historica mediante `status_alta = 0`;
+  - las altas y ediciones de `pantallas_controller.php` usan el reemplazo exclusivo;
+  - la activacion manual de relaciones historicas reutiliza la misma operacion para desactivar la playlist vigente antes de activar la seleccionada;
+  - `cms-microservicios/models/pantallas.js` selecciona la relacion activa mas reciente por pantalla como defensa ante datos legacy duplicados;
+  - se conservaron los mensajes existentes y se agrego `assignment_mode = replace_active_playlist` como dato informativo.
+- Riesgo residual:
+  - falta validar con datos reales que no existan relaciones activas legacy duplicadas y confirmar el comportamiento visual al cambiar de playlist;
+  - la vigencia por fechas y el orden interno de multimedia siguen fuera de esta intervencion.
+- Validacion tecnica ejecutada:
+  - `php -l` del controlador y modelo de pantallas del CMS;
+  - pendiente ejecutar prueba funcional: asignar playlist A, asignar playlist B a la misma pantalla, revisar tabla, reproducción y refresh Socket.IO.
+
+### 2026-07-21 - Compatibilidad de conectividad CMS con Docker y XAMPP
+- Objetivo: dejar documentado y soportado que Node se ejecute directamente en el host mientras el CMS cambia entre Docker local y XAMPP productivo.
+- Cambio aplicado:
+  - el CMS detecta Docker mediante `/.dockerenv` cuando no recibe `MICROSERVICES_BASE_URL`
+  - el fallback Docker es `host.docker.internal:3000`
+  - el fallback fuera de Docker es `127.0.0.1:3000`
+  - la API key continua siendo externa y obligatoria mediante `MICROSERVICES_INTERNAL_API_KEY`
+- Riesgo: medio, porque XAMPP requiere configurar la API key en el entorno de Apache y reiniciar el servicio para que PHP la reciba.
+- Validacion sugerida:
+  - validar Docker local con `docker compose up -d --force-recreate web`
+  - validar XAMPP con `SetEnv MICROSERVICES_BASE_URL` y `SetEnv MICROSERVICES_INTERNAL_API_KEY` en el VirtualHost
+  - repetir asignacion de playlist y verificar ausencia de advertencias de conectividad o autenticacion
+
+### 2026-07-21 - Diagnostico de conectividad CMS Docker -> microservicio Node
+- Objetivo: resolver el error `Failed to connect to localhost port 3000: Connection refused` al notificar el refresh de pantallas desde `cms-mazatlanic`.
+- Diagnostico confirmado:
+  - `cms-mazatlanic` se ejecuta dentro del contenedor `cms-mazatlanic-web` y publica el puerto `8002`.
+  - Node se ejecuta en el host y escucha el puerto `3000`.
+  - Desde el contenedor, `localhost:3000` apunta al propio contenedor del CMS y rechaza la conexion.
+  - Desde el contenedor, `host.docker.internal:3000` alcanza Node y devuelve `401 NO AUTORIZADO`, confirmando conectividad.
+  - `MICROSERVICES_INTERNAL_API_KEY` estaba configurada como una URL, no como la misma clave de `INTERNAL_API_KEY` del microservicio.
+- Cambio aplicado:
+  - `docker-compose.yml` expone `MICROSERVICES_BASE_URL` y `MICROSERVICES_INTERNAL_API_KEY` al contenedor web.
+  - `src/application/config/constants.php` consume esas variables, usa `host.docker.internal:3000` como fallback local de URL y no incluye secretos en codigo.
+- Riesgo: medio, porque requiere recrear el contenedor web y configurar la clave real en el entorno Docker. En produccion se debe sustituir `host.docker.internal` por el hostname privado o publico controlado del microservicio.
+- Validacion sugerida:
+  - definir `MICROSERVICES_INTERNAL_API_KEY` en el `.env` del proyecto `cms-mazatlanic` con el mismo valor de `INTERNAL_API_KEY` del microservicio
+  - recrear `cms-mazatlanic-web`
+  - verificar desde el contenedor `GET /api/pantallas/socket/status` con la key y esperar HTTP 200
+  - asignar una playlist y confirmar que desaparece `refresh_warning`
+- Validacion ejecutada:
+  - el contenedor reporto `MICROSERVICES_BASE_URL=http://host.docker.internal:3000` y API key configurada sin exponer su valor
+  - `GET /api/pantallas/socket/status` respondio HTTP 200 con una pantalla y un socket `airplay` activos
+  - `POST /api/pantallas/socket/refresh` respondio HTTP 200 con `total_targets=1`, `total_emitted=1` y `source_type=assigned_playlist`
+- Estado: resuelto para Docker local; pendiente de validar la inyeccion equivalente mediante `SetEnv` en XAMPP/Apache productivo.
+
+### 2026-07-22 - Refresh push del flujo `airplay` sin polling continuo
+- Objetivo: eliminar la dependencia de polling periodico en la pantalla publica `airplay` y refrescar playlist en cuanto el CMS externo cambie asignaciones, multimedia o playlist default.
+- Archivos modificados:
+  - `helpers/sockets.js`
+  - `controllers/pantallas.js`
+  - `routes/pantallas.js`
+  - `models/pantallas.js`
+  - `../cms-mazatlanic/src/application/controllers/pantallas_controller.php`
+  - `../cms-mazatlanic/src/application/models/pantallas_model.php`
+  - `../cms-mazatlanic/src/application/views/public/screens/index.php`
+  - `../cms-mazatlanic/src/assets/js/js_sockets.js`
+  - `docs/ARCHITECTURE.md`
+  - `docs/KNOWN_ISSUES.md`
+  - `docs/PENDING_ITEMS.md`
+  - `docs/MAINTENANCE_LOG.md`
+- Cambio aplicado:
+  - la pantalla `airplay` deja de consultar playlist por intervalo y ahora hace solo una carga inicial al conectar por Socket.IO
+  - se agrego `POST /api/pantallas/socket/refresh` como endpoint interno protegido para forzar refresh de pantallas conectadas
+  - el microservicio recompone y emite el evento `response` por `token` conectado, resolviendo playlist asignada, playlist default o ausencia de contenido
+  - `cms-mazatlanic` notifica refresh al microservicio al crear, editar o desactivar asignaciones, al modificar multimedia y al cambiar la playlist default
+  - se dejo `siteweb` fuera de este alcance para no mezclar consumidores con reglas operativas distintas
+- Riesgo: medio, porque la actualizacion inmediata ahora depende de la comunicacion interna CMS -> microservicio; si ese enlace falla, la pantalla conserva el ultimo estado hasta reconexion o recarga.
+- Validacion sugerida:
+  - abrir `public_controller/pantalla` y confirmar carga inicial de contenido
+  - crear o editar una asignacion de playlist a pantalla y validar refresh inmediato sin esperar intervalo
+  - agregar, editar o desactivar multimedia de una playlist y confirmar actualizacion en la pantalla conectada
+  - cambiar la playlist default y validar refresco de pantallas sin asignacion explicita
+  - provocar fallo controlado del endpoint interno o de la API key y confirmar que el CMS responda con advertencia operativa
+  - repetir las pruebas en produccion con `MICROSERVICES_BASE_URL` y `MICROSERVICES_INTERNAL_API_KEY` reales
+- Validacion tecnica ejecutada en esta fase: carga de modulos Node del microservicio sin error de sintaxis.
+- Validacion tecnica ejecutada en esta fase: `php -l` exitoso sobre controlador y modelo modificados en `cms-mazatlanic`.
+- Validacion tecnica ejecutada en esta fase: parseo exitoso del cliente `js_sockets.js` del CMS externo.
+
+### 2026-07-21 - Integracion de presencia Socket en catalogo de pantallas del CMS externo
+- Objetivo: mostrar el estado real de conexion `airplay` dentro del catalogo administrativo de pantallas en `cms-mazatlanic`, sin mezclarlo con el `STATUS` de alta/inactiva y sin exponer la API key en navegador.
+- Archivos modificados:
+  - `../cms-mazatlanic/src/application/config/constants.php`
+  - `../cms-mazatlanic/src/application/controllers/pantallas_controller.php`
+  - `../cms-mazatlanic/src/application/views/pantallas/index_catalogos.php`
+  - `../cms-mazatlanic/src/application/views/pantallas/ajax/table_pantallas.php`
+  - `../cms-mazatlanic/src/assets/js/pantallas/js_catalogos.js`
+  - `docs/KNOWN_ISSUES.md`
+  - `docs/PENDING_ITEMS.md`
+  - `docs/MAINTENANCE_LOG.md`
+- Cambio aplicado:
+  - se agrego la columna `CONEXION` en el catalogo de pantallas del CMS externo
+  - el backend PHP del CMS ahora consulta `GET /api/pantallas/socket/status` del microservicio Node usando `MICROSERVICES_BASE_URL` y `MICROSERVICES_INTERNAL_API_KEY`
+  - la vista inicial y el parcial AJAX renderizan `CONECTADA`, `DESCONECTADA` o `SIN DATOS` sin alterar el `STATUS` administrativo existente
+  - el JS del catalogo refresca la presencia cada 30 segundos mientras la pestaña `PANTALLAS` esta activa
+  - la integracion degrada a `SIN DATOS` si la credencial interna no esta configurada o si el microservicio no responde
+- Riesgo: medio, porque introduce una dependencia operativa entre dos aplicaciones y requiere configuracion consistente de ambiente para mostrar el estado real.
+- Validacion sugerida:
+  - configurar `MICROSERVICES_INTERNAL_API_KEY` en el entorno de `cms-mazatlanic`
+  - abrir `pantallas_controller/index_catalogos` y revisar la columna `CONEXION`
+  - conectar y desconectar una pantalla `airplay` y confirmar actualizacion del badge sin recargar la pagina
+  - validar degradacion controlada a `SIN DATOS` si se remueve temporalmente la credencial o se detiene el microservicio
+
+### 2026-07-21 - Observabilidad inicial del flujo Socket `airplay`
+- Objetivo: detectar conexion, ultimo heartbeat y desconexion de pantallas `airplay`, dejando una inspeccion interna sin tocar aun el flujo `siteweb`.
+- Archivos modificados:
+  - `helpers/sockets.js`
+  - `controllers/pantallas.js`
+  - `routes/pantallas.js`
+  - `docs/KNOWN_ISSUES.md`
+  - `docs/ARCHITECTURE.md`
+  - `docs/REPO_MAP.md`
+  - `docs/PENDING_ITEMS.md`
+  - `../cms-mazatlanic/src/assets/js/js_sockets.js`
+- Cambio aplicado:
+  - el cliente `airplay` ahora envia un primer `emit` inmediato al conectar y conserva el refresco periodico existente
+  - el handshake del cliente envia tambien el tipo logico de socket
+  - el microservicio registra presencia `airplay` en memoria por `token`, `socket_id`, `connected_at` y `last_seen_at`
+  - se registra `disconnect` con razon y se mantiene un historial corto en memoria de eventos recientes de conexion/desconexion
+  - se agrego `GET /api/pantallas/socket/status` como endpoint interno protegido por API key para inspeccion operativa del estado actual
+- Riesgo: medio, porque el flujo ahora depende de una coordinacion explicita entre el cliente externo `cms-mazatlanic` y el microservicio, y la presencia sigue siendo volatil ante reinicios del proceso Node.
+- Validacion sugerida:
+  - abrir una pantalla `airplay` y confirmar carga inicial sin esperar el primer intervalo
+  - revisar consola del navegador y del microservicio al conectar
+  - cerrar la pestaña o interrumpir la red y confirmar evento de desconexion en el microservicio
+  - consultar `GET /api/pantallas/socket/status` con `x-api-key` valida para verificar presencia activa y `recent_events`
+  - reabrir la pantalla y confirmar reconexion con nuevo evento en historial
+
 ### 2026-03-30 - Adaptador defensivo para modelos legacy MySQL
 - Objetivo: evitar fallas de runtime cuando `databases/config.js` no expone `connection` con el contrato esperado por los modelos legacy.
 - Archivos modificados:

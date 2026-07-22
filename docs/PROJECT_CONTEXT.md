@@ -31,6 +31,7 @@ Exponer microservicios de apoyo para operaciones ligadas a CRM/eventos, particul
 - Correo usa plantillas HTML Handlebars.
 - El sistema depende de tablas legacy con prefijos `tcr_`, `scr_`, `sis_` y `cat_`.
 - Parte del comportamiento esta impulsado por procedimientos almacenados.
+- Una pantalla debe tener una sola playlist activa; las reasignaciones conservan las relaciones anteriores como inactivas para mantener historial.
 
 ## Dependencias clave
 - Base de datos MySQL
@@ -49,6 +50,8 @@ Exponer microservicios de apoyo para operaciones ligadas a CRM/eventos, particul
 - El modulo de correo sigue activo para `ingresos` y `web`, pero el proveedor SMTP definitivo para produccion aun requiere validacion.
 - Existe un endpoint interno para correo simple pensado para mensajes transaccionales breves con plantilla corporativa reutilizable.
 - Los endpoints internos confirmados (`/api/mail/simple` y `/api/whatsapp/send_notification`) ya pueden protegerse con API key.
+- El flujo de reproduccion de pantallas aplica la regla exclusiva desde `cms-mazatlanic`; el microservicio mantiene una defensa de lectura para relaciones activas legacy duplicadas.
+- El flujo `airplay` puede alertar por WhatsApp cuando el ultimo socket de una pantalla permanece desconectado durante el periodo configurado; utiliza el detalle activo de `cat_whatsapp_types_details` y sus destinatarios activos relacionados.
 
 ## Riesgos o vacios de contexto
 - Pendiente de validacion: topologia real de despliegue.

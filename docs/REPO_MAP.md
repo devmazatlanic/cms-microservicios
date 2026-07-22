@@ -32,6 +32,8 @@
 - `helpers/whatsapp.js`
 - `helpers/tools.js`
 - `controllers/whatsapp.js`
+- `controllers/pantallas.js`
+- `models/pantallas.js`: consulta playlist por pantalla y aplica la defensa de relacion activa mas reciente.
 - `controllers/mail.js`
 - `controllers/notificaciones.js`
 - `controllers/rfid.js`
@@ -44,6 +46,7 @@
 - Webhook WhatsApp: `/api/whatsapp`
 - Correo simple transaccional: `/api/mail/simple`
 - Socket server: inicializado desde `server.initSocket()`
+- Estado interno de presencia `airplay`: `GET /api/pantallas/socket/status`
 
 ## Configuracion clave
 - `.env`: `PORT`, `API_CORS`, `SOCKET_CORS`, `APP_TRUST_PROXY`, `APP_FORCE_HTTPS`, `APP_ENABLE_HTTPS_SERVER`, `APP_HTTPS_KEY_PATH`, `APP_HTTPS_CERT_PATH`, `APP_ENABLE_IPDEVICE_ROUTE`, `INTERNAL_API_KEY`, `WHATSAPP_VERIFY_TOKEN`, `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_API_VERSION`
@@ -59,6 +62,11 @@
 - `controllers/mail` consume `config/mail` y usa plantilla corporativa simple para notificaciones transaccionales
 - `models` consultan MySQL
 - `helpers/whatsapp` llama a Meta
+- `helpers/sockets` concentra el flujo Socket.IO y el estado en memoria de presencia `airplay`
+- `helpers/airplay_notifications.js` programa alertas por desconexion, consulta destinatarios y envia plantillas de WhatsApp sin llamar al endpoint HTTP interno
+- `models/whatsapp.js` conserva la bitacora de mensajes y consulta la configuracion activa de notificaciones internas
+- `cms-mazatlanic/src/application/controllers/pantallas_controller.php` orquesta altas, ediciones, activaciones y refresh de asignaciones.
+- `cms-mazatlanic/src/application/models/pantallas_model.php` centraliza el reemplazo transaccional de la playlist activa por pantalla.
 - `helpers/internal_api_key` protege endpoints internos confirmados mediante `x-api-key` o `Authorization: Bearer`
 - `config/mail` llama a SMTP y usa `views/emails`
 - `docs/*` concentra trazabilidad tecnica y seguimiento incremental del mantenimiento

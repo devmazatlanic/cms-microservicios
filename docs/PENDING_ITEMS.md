@@ -19,9 +19,19 @@
 - Revisar y normalizar el manejo de error de los flujos activos de correo (`controllers/ingresos.js`, `controllers/web.js`) antes de cualquier reactivacion o migracion del modulo de notificaciones.
 - Corregir la validacion defectuosa en `controllers/notificaciones.js` si el modulo vuelve a habilitarse o se reutiliza parte de su logica.
 - Definir si `routes/helpers.js` debe montarse o eliminarse en una fase futura.
+- Definir si la presencia `airplay` debe persistirse en base de datos para auditoria, dashboard o alertado, ya que en esta fase solo se mantiene en memoria del proceso Node.
+- Extender el modelo push sin polling al consumidor `siteweb` cuando se retome ese frente, manteniendolo fuera del alcance actual de `airplay`.
+- Migrar en `cms-mazatlanic` los consumos legacy a microservicios que siguen hardcodeados en `src/application/helpers/tools_helper.php`, especialmente IP interna y fallback de `x-api-key` para correo y WhatsApp.
+- Validar en CMS que al asignar una segunda playlist a la misma pantalla la primera quede `INACTIVO`, que la pantalla reproduzca solo la nueva y que la activacion manual de una relacion historica no genere dos relaciones activas.
+- Auditar relaciones legacy de `scr_pantallas_reproducciones` con mas de una fila activa por `id_pantalla`; definir una limpieza controlada o confirmar que la defensa de lectura por relacion mas reciente es suficiente para la operacion.
+- Confirmar si el flujo `airplay` debe aplicar vigencia por fecha y un orden deterministico de multimedia antes de cerrar definitivamente la salida a produccion del catalogo de playlists.
+- Validar la alerta WhatsApp de desconexion AirPlay: detalle activo `11`, nombre tecnico en `cat_whatsapp_types_details.name`, destinatarios activos, formato telefonico y plantilla Meta con tres parametros.
+- Ejecutar pruebas controladas de desconexion sostenida, reconexion antes de 60 segundos, multiples destinatarios y fallo parcial de Meta.
+- Definir en una fase futura si las alertas AirPlay requieren reintentos o una cola persistente para no perder notificaciones durante reinicios del proceso.
 
 ### Pendientes de salida a produccion
 - Incluir la carpeta `docs/` en el siguiente commit o corte para no perder trazabilidad tecnica del mantenimiento realizado.
+- Configurar y validar en XAMPP/Apache productivo las variables `MICROSERVICES_BASE_URL` y `MICROSERVICES_INTERNAL_API_KEY`; cuando Node comparta servidor con el CMS, la URL debe ser `http://127.0.0.1:3000` y la key debe coincidir con `INTERNAL_API_KEY` del microservicio. El escenario Docker local ya fue validado para la columna `CONEXION` y el refresh push de `airplay`.
 
 ### Baja prioridad
 - Unificar progresivamente el acceso a MySQL hacia un solo estilo.

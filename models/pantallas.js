@@ -55,6 +55,7 @@ const getPlaylisPantallabyToken = async (token) => {
         const queryResult = await new Promise((resolve, reject) => {
             let sql = `
                 SELECT 
+                    sr.id AS id_reproduccion,
                     DATE(sr.fecha_inicio) AS fecha_inicio,
                     DATE(sr.fecha_fin) AS fecha_fin,
                     sp.nombre AS pantalla,
@@ -70,6 +71,12 @@ const getPlaylisPantallabyToken = async (token) => {
                 JOIN (
                     SELECT * FROM scr_reproducciones_detalles WHERE status_alta = 1
                 ) srd ON srd.id_reproduccion = sr.id
+                JOIN (
+                    SELECT MAX(id) AS id
+                    FROM scr_pantallas_reproducciones
+                    WHERE status_alta = 1
+                    GROUP BY id_pantalla
+                ) spr_current ON spr_current.id = spr.id
                 JOIN scr_pantallas sp ON sp.id = spr.id_pantalla
                 WHERE spr.status_alta = 1
                 -- AND sr.fecha_inicio < CURRENT_DATE
@@ -92,11 +99,41 @@ const getPlaylisPantallabyToken = async (token) => {
     }
 }
 
+const getPantallaTokensByPlaylistId = async (playlistId) => {
+    try {
+        const queryResult = await new Promise((resolve, reject) => {
+            let sql = `
+                SELECT DISTINCT
+                    sp.token
+                FROM scr_pantallas_reproducciones spr
+                JOIN scr_pantallas sp
+                ON sp.id = spr.id_pantalla
+                WHERE spr.status_alta = 1
+                AND sp.status_alta = 1
+                AND spr.id_reproduccion = ?`;
+
+            connection.query(sql, [playlistId], (error, results) => {
+                if (error) {
+                    reject(error);
+                } else {
+                    resolve(results);
+                }
+            });
+        });
+
+        return queryResult;
+
+    } catch (error) {
+        throw new Error('ERROR AL OBTENER TOKENS DE PANTALLAS POR PLAYLIST: ' + error.message);
+    }
+}
+
 const getDefaultPlaylist = async () => {
     try {
         const queryResult = await new Promise((resolve, reject) => {
             let sql = `
             SELECT
+                scr_rp.id AS id_reproduccion,
                 DATE(scr_rp.fecha_inicio) AS fecha_inicio,
                 scr_rp.nombre AS reproduccion,
                 scr_repd.source
@@ -149,5 +186,6 @@ module.exports = {
     getPantallabyToken,
     createPantalla,
     getPlaylisPantallabyToken,
+    getPantallaTokensByPlaylistId,
     getDefaultPlaylist
 }

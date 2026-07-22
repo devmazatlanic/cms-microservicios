@@ -1,6 +1,7 @@
 const { getPantallabyId, getPantallabyToken, createPantalla, getPlaylisPantallabyToken, getDefaultPlaylist } = require('../models/pantallas');
 const { get_mac_address } = require('../helpers/tools');
 const macaddress = require('macaddress');
+const { getAirplayPresenceSnapshot, resolveAirplayRefreshTargets, pushAirplayPlaylistRefresh } = require('../helpers/sockets');
 
 const get_pantalla_by_id = async (request, response) => {
     const { id } = request.body;
@@ -99,6 +100,72 @@ const store_pantalla = async (req, res) => {
 
 };
 
+const get_socket_airplay_status = async (_request, response) => {
+    try {
+        const snapshot = getAirplayPresenceSnapshot();
+
+        return response.status(200).json({
+            next: true,
+            message: 'SOCKET AIRPLAY STATUS.',
+            summary: {
+                total_screens: snapshot.total_screens,
+                total_sockets: snapshot.total_sockets
+            },
+            response: snapshot.screens,
+            recent_events: snapshot.recent_events
+        });
+    } catch (error) {
+        return response.status(500).json({
+            next: false,
+            message: `NO FUE POSIBLE OBTENER EL ESTADO DEL SOCKET AIRPLAY: ${error.message}`
+        });
+    }
+};
+
+const refresh_socket_airplay_playlist = async (request, response) => {
+    try {
+        const payload = request.body || {};
+        const reason = String(payload.reason || '').trim();
+        const targets = await resolveAirplayRefreshTargets({
+            tokens: payload.tokens,
+            playlist_id: payload.playlist_id,
+            refresh_default_consumers: payload.refresh_default_consumers === true
+        });
+
+        const emitted = await pushAirplayPlaylistRefresh({
+            io: request.io,
+            tokens: targets,
+            reason,
+            metadata: {
+                playlist_id: payload.playlist_id || null,
+                refresh_default_consumers: payload.refresh_default_consumers === true
+            }
+        });
+
+        return response.status(200).json({
+            next: true,
+            message: 'SOCKET AIRPLAY REFRESH PROCESADO.',
+            requested: {
+                tokens: Array.isArray(payload.tokens) ? payload.tokens : [],
+                playlist_id: payload.playlist_id || null,
+                refresh_default_consumers: payload.refresh_default_consumers === true,
+                reason: reason || null
+            },
+            summary: {
+                total_targets: targets.length,
+                total_emitted: emitted.filter((item) => item.emitted).length,
+                total_connected: emitted.filter((item) => item.connected).length
+            },
+            response: emitted
+        });
+    } catch (error) {
+        return response.status(500).json({
+            next: false,
+            message: `NO FUE POSIBLE PROCESAR EL REFRESH DEL SOCKET AIRPLAY: ${error.message}`
+        });
+    }
+};
+
 //conexion socket
 const socket_pantalla = async (_data = {}) => {
     let _return = { message: 'NO SE PUDO ESTABLECER CONEXION A LAS LISTAS DE REPRODUCCION.', next: false };
@@ -167,5 +234,7 @@ module.exports = {
     get_pantalla_by_id,
     get_pantalla_by_token,
     store_pantalla,
+    get_socket_airplay_status,
+    refresh_socket_airplay_playlist,
     socket_pantalla
 };

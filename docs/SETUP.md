@@ -28,6 +28,8 @@
 - `WHATSAPP_ACCESS_TOKEN`
 - `WHATSAPP_PHONE_NUMBER_ID`
 - `WHATSAPP_API_VERSION`
+- `AIRPLAY_DISCONNECT_NOTIFICATION_DETAIL_ID` (opcional; por defecto `11`)
+- `AIRPLAY_DISCONNECT_DELAY_MS` (opcional; por defecto `60000` milisegundos)
 - `MAIL_HOST`
 - `MAIL_PORT`
 - `MAIL_SECURE`
@@ -47,6 +49,10 @@
 - `MAIL_FROM_INFO`
 - `MAIL_CC_SISTEMAS`
 - `MAIL_CC_WEB_CONTACT`
+- `MICROSERVICES_BASE_URL` (en `cms-mazatlanic`; local Docker Desktop: `http://host.docker.internal:3000`)
+- `MICROSERVICES_INTERNAL_API_KEY` (en `cms-mazatlanic`; debe coincidir exactamente con `INTERNAL_API_KEY` del microservicio)
+
+Nota de integracion: Node puede ejecutarse directamente en `http://localhost:3000`; la URL que debe cambiar por entorno es la que usa el CMS PHP. En Docker Desktop el CMS debe usar `http://host.docker.internal:3000`; bajo XAMPP, si ambos servicios comparten maquina, puede usar `http://127.0.0.1:3000`.
 
 Pendiente de validacion:
 - variables adicionales esperadas por produccion
@@ -67,8 +73,9 @@ Pendiente de validacion:
 1. Asegurar que `.env` exista y sea valido.
 2. Asegurar conectividad a MySQL.
 3. Verificar credenciales SMTP y variables de WhatsApp/Meta.
-4. Instalar dependencias si el entorno no las tiene.
-5. Iniciar el servicio usando el entrypoint `app.js`.
+4. Confirmar la configuracion activa del detalle de WhatsApp usado para alertas AirPlay y sus destinatarios.
+5. Instalar dependencias si el entorno no las tiene.
+6. Iniciar el servicio usando el entrypoint `app.js`.
 
 ## Nota sobre correo
 - `config/mail.js` ya no depende de un proveedor SMTP hardcodeado; el transporte se configura por `MAIL_*`.
@@ -89,6 +96,8 @@ Pendiente de validacion:
 - Pendiente de validacion: version de Node recomendada.
 - Pendiente de validacion: script oficial de arranque.
 - Posible dependencia de infraestructura local/red privada para la base de datos.
+- Si `cms-mazatlanic` corre dentro de Docker y Node corre en el host, `localhost` dentro de PHP no apunta al microservicio; en Docker Desktop debe usarse `host.docker.internal`.
+- Si `cms-mazatlanic` corre bajo XAMPP, `MICROSERVICES_BASE_URL` debe apuntar a `127.0.0.1:3000` cuando Node este en la misma maquina, y `MICROSERVICES_INTERNAL_API_KEY` debe inyectarse en Apache con `SetEnv`.
 - Riesgo alto si se usan credenciales versionadas sin rotacion.
 - Pendiente de validacion: proveedor SMTP productivo definitivo y estrategia de reputacion/entregabilidad.
 - Pendiente de validacion: configuracion final de proxy/HTTPS en el hosting productivo.

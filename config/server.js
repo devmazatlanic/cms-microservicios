@@ -253,11 +253,19 @@ class Server {
 
     initSocket() {
         const { sockeTConnect } = require('../helpers/sockets');
+        const {
+            cancelAirplayDisconnectNotification,
+            scheduleAirplayDisconnectNotification
+        } = require('../helpers/airplay_notifications');
 
         sockeTConnect({
             io: this.io,
             client: ['airplay', 'siteweb'],
-            server: 'response'
+            server: 'response',
+            onAirplayConnected: ({ token }) => {
+                cancelAirplayDisconnectNotification(token);
+            },
+            onAirplayDisconnected: scheduleAirplayDisconnectNotification
         });
     }
 

@@ -69,6 +69,23 @@ Arquitectura tipo MVC ligera con responsabilidades separadas por carpeta, pero s
 - El webhook ya procesa `messages` y `statuses`, recorriendo todos los `entry` y `changes` visibles en el payload y sincronizando `message_status` en la bitacora local.
 - Los mensajes entrantes con y sin contexto util ya se registran y existe un menu/bot textual inicial para orientar mensajes libres sin inventar flujos de negocio adicionales.
 
+## Nota sobre pantallas / Socket `airplay`
+- El flujo `airplay` se consume desde un cliente externo en `cms-mazatlanic`, que se conecta por Socket.IO y usa un `clientId` persistente como token operativo de la pantalla.
+- El microservicio mantiene ahora un registro de presencia `airplay` en memoria del proceso Node, con `connected_at`, `last_seen_at`, `socket_ids` activos y un historial corto de eventos recientes de conexion/desconexion.
+- La inspeccion operativa visible de esta presencia se expone por el endpoint interno `GET /api/pantallas/socket/status`.
+- La reproduccion `airplay` opera ahora en modo hibrido: la pantalla solicita contenido una sola vez al conectar y los cambios posteriores de playlist se empujan desde el CMS externo por `POST /api/pantallas/socket/refresh`, protegido con API key interna.
+- La regla de asignacion del CMS es exclusiva: cada pantalla debe conservar una sola playlist activa; una nueva asignacion desactiva la anterior con `status_alta = 0` y conserva el registro para historial.
+- Como defensa de compatibilidad, `models/pantallas.js` selecciona la relacion activa mas reciente por pantalla cuando existen filas legacy duplicadas, evitando concatenar campañas en el consumidor aunque la limpieza de datos aun este pendiente.
+- El refresh push recalcula contenido por `token` conectado y contempla tres casos visibles en codigo: playlist asignada, consumidores de playlist default y pantallas explicitamente afectadas por cambios de asignacion o multimedia.
+- El consumidor `siteweb` no forma parte aun de este flujo push y debe tratarse como alcance separado cuando se retome.
+- Pendiente de validacion/evolucion: si esta presencia debe persistirse en base de datos para auditoria, tablero administrativo o alertado formal.
+- Cuando el ultimo socket de una pantalla se desconecta, `helpers/sockets.js` notifica el evento mediante callback a `config/server.js`, que lo conecta con `helpers/airplay_notifications.js`.
+- La alerta espera 60 segundos por defecto. Si la pantalla se reconecta durante ese periodo, el temporizador se cancela y no se envia el aviso.
+- La alerta consulta `cat_whatsapp_types_details` con el detalle `11` por defecto y obtiene desde `name` el identificador tecnico de la plantilla; los telefonos se obtienen de `cat_correosinternos` con `status_alta = 1`.
+- El envio se realiza internamente mediante `send_message()` y cada destinatario se registra en `whatsapp_requests`; no se realiza una llamada HTTP al endpoint `/api/whatsapp/send_notification`.
+- El contrato actual de la alerta usa tres parametros de cuerpo: `ENCARGADO`, `MONITOREO PANTALLAS` y el mensaje dinamico con el nombre de la pantalla.
+- La configuracion opcional `AIRPLAY_DISCONNECT_NOTIFICATION_DETAIL_ID` permite cambiar el detalle sin modificar el helper; `AIRPLAY_DISCONNECT_DELAY_MS` permite ajustar el periodo de gracia.
+
 ## Riesgos arquitectonicos
 - Alto acoplamiento entre logica HTTP, SQL e integraciones externas.
 - Validacion dispersa y no uniforme.
@@ -76,3 +93,4 @@ Arquitectura tipo MVC ligera con responsabilidades separadas por carpeta, pero s
 - Duplicacion de logica en modelos y sockets.
 - Configuracion sensible mezclada con codigo.
 - Pendiente de validacion: arquitectura real de despliegue y terminacion TLS.
+- Pendiente de validacion: confirmar que el detalle activo `11` tiene una plantilla Meta aprobada con tres parametros y que los telefonos almacenados cumplen el formato aceptado por Meta.

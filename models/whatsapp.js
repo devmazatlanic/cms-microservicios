@@ -13,13 +13,13 @@ const store_request = async (_data) => {
   `;
   const values = [
     _data.phone_number || null,
-    _data.type         || null,
-    _data.name         || null,
-    _data.id_message   || null,
+    _data.type || null,
+    _data.name || null,
+    _data.id_message || null,
     _data.message_status || null,
-    _data.url          || null,
-    _data.filename     || null,
-    _data.caption      || null,
+    _data.url || null,
+    _data.filename || null,
+    _data.caption || null,
     JSON.stringify(_data.model || {})
   ];
 
@@ -156,11 +156,50 @@ const get_pending_auth_request = async (_data) => {
   }
 };
 
+/**
+ * Obtiene la plantilla activa y los destinatarios activos de una notificacion interna.
+ * El detalle de WhatsApp funciona como la configuracion central de la notificacion.
+ * @param {number|string} _id_whatsapp_type_detail
+ */
+const get_whatsapp_notification_config_by_type_detail = async (_id_whatsapp_type_detail) => {
+  const detailId = Number.parseInt(_id_whatsapp_type_detail, 10);
+
+  if (!Number.isFinite(detailId) || detailId <= 0) {
+    return [];
+  }
+
+  const sql = `
+    SELECT
+      d.id AS id_whatsapp_type_detail,
+      TRIM(d.nombre) AS template_name,
+      d.parametros AS template_parameters,
+      c.phone_number,
+      UPPER(TRIM(c.nombre_completo)) AS recipient_name
+    FROM cat_whatsapp_types_details d
+    LEFT JOIN cat_correosinternos c
+      ON c.id_whatsapp_type_detail = d.id
+      AND c.status_alta = 1
+      AND c.phone_number IS NOT NULL
+      AND TRIM(c.phone_number) <> ''
+    WHERE d.id = ?
+      AND d.status_alta = 1
+    ORDER BY c.id ASC
+  `;
+
+  try {
+    return await db.query(sql, [detailId]);
+  } catch (err) {
+    console.error('Error al consultar configuracion de notificacion WhatsApp:', err);
+    throw new Error('No se pudo obtener la configuracion de la notificacion WhatsApp.');
+  }
+};
+
 module.exports = {
   store_request,
   get_message,
   store_incoming_message,
   update_message_status,
   clear_pending_auth_request,
-  get_pending_auth_request
+  get_pending_auth_request,
+  get_whatsapp_notification_config_by_type_detail
 };
