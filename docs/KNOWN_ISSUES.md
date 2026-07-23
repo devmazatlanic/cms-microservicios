@@ -5,6 +5,7 @@ El historial de cambios aplicados se conserva en `MAINTENANCE_LOG.md`.
 
 ## Correcciones recientes pendientes de validacion
 - 2026-07-22: se corrigio la consulta de configuracion de alertas AirPlay que interpretaba el detalle `11` con base numerica `11` y consultaba el registro `12`; tambien se corrigio la columna de plantilla de `nombre` a `name`. Falta confirmar el comportamiento con la base de datos real y reiniciar Node para cargar el cambio.
+- 2026-07-23: se agrego `GET /api/hware/sensor?mac=...` para atender la consulta de configuracion del ESP32 sin registrar eventos. Falta actualizar el firmware y probarlo con el dispositivo real.
 
 ## Prioridad Alta
 - Secretos sensibles detectados en codigo o repositorio:
@@ -44,6 +45,7 @@ El historial de cambios aplicados se conserva en `MAINTENANCE_LOG.md`.
 - La automatizacion entrante de WhatsApp sigue acoplada a plantillas concretas y aun no existe una capa de enrutamiento conversacional para futuro bot o menu.
 - La sincronizacion de `statuses` de WhatsApp actualiza `message_status`, pero aun no persiste el payload completo del status ni metadatos adicionales de entrega o error.
 - La alerta interna de desconexion envia un mensaje por destinatario y registra el resultado en `whatsapp_requests`, pero aun no cuenta con reintentos ni una cola persistente para fallos transitorios de Meta.
+- `POST /api/hware/sensor` reutiliza la insercion de `checador_rfid` aunque el evento del ESP32 no proporciona perfil ni tarjeta; falta confirmar que el esquema acepte ese uso o separar los eventos de conteo en una persistencia propia.
 
 ## Hallazgos pendientes de validar
 - Configuracion de base de datos real en produccion.
@@ -61,3 +63,4 @@ El historial de cambios aplicados se conserva en `MAINTENANCE_LOG.md`.
 - Uso real o legado de rutas auxiliares no montadas.
 - Confirmar en la base de datos que `cat_whatsapp_types_details.id = 11` esta activo, que `name` contiene el nombre tecnico aprobado por Meta y que existen destinatarios activos en `cat_correosinternos`.
 - Validar en pruebas controladas la cancelacion por reconexion, el envio despues de 60 segundos y el comportamiento cuando un destinatario falla.
+- Confirmar el contrato final del ESP32: usar `/api/hware/sensor` para `POST` y `/api/hware/sensor?mac=...` para `GET`, ademas de definir autenticacion del dispositivo.

@@ -28,6 +28,9 @@
 - Validar la alerta WhatsApp de desconexion AirPlay: detalle activo `11`, nombre tecnico en `cat_whatsapp_types_details.name`, destinatarios activos, formato telefonico y plantilla Meta con tres parametros.
 - Ejecutar pruebas controladas de desconexion sostenida, reconexion antes de 60 segundos, multiples destinatarios y fallo parcial de Meta.
 - Definir en una fase futura si las alertas AirPlay requieren reintentos o una cola persistente para no perder notificaciones durante reinicios del proceso.
+- Actualizar el firmware ESP32 para enviar la MAC en `GET /api/hware/sensor?mac=...` y validar la respuesta `config.maxdistance`.
+- Confirmar si `checador_rfid` debe continuar almacenando eventos del contador de personas o si debe crearse un modelo/tabla especifico para sensores.
+- Agregar autenticacion para `/api/hware/sensor` sin romper los dispositivos ya instalados.
 
 ### Pendientes de salida a produccion
 - Incluir la carpeta `docs/` en el siguiente commit o corte para no perder trazabilidad tecnica del mantenimiento realizado.

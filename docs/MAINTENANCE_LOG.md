@@ -96,6 +96,31 @@ Todo lo no confirmado debe tratarse como pendiente de validacion.
   - verificacion directa de que `parseInt('11', 10)` produce `11` y `parseInt('11', 11)` produce `12`;
   - `git diff --check` sin errores.
 
+### 2026-07-23 - Compatibilidad de configuracion para sensor ESP32
+- Objetivo: permitir que el ESP32 consulte su distancia maxima configurada sin registrar un evento adicional.
+- Diagnostico confirmado:
+  - el firmware realiza `POST /api/hware/sensor` al detectar una persona;
+  - el firmware realiza `GET /api/hware/sensor` cada 10 segundos, pero la ruta solo tenia `POST`;
+  - el servidor necesita la MAC para identificar el dispositivo y devolver su configuracion;
+  - la persistencia actual del POST reutiliza `checador_rfid` y recibe unicamente `id_dispositivo_lector`, por lo que su compatibilidad con conteo de personas queda pendiente de validacion.
+- Cambios aplicados:
+  - `routes/rfid.js` agrega `GET /sensor`;
+  - `controllers/rfid.js` agrega `get_sensor_config`, recibe `mac` por query string y devuelve `config` sin insertar registros;
+  - la configuracion del POST ahora se valida antes de llamar a `JSON.parse` implicitamente;
+  - se agregaron logs operativos para distinguir consulta de configuracion y configuracion JSON invalida.
+- Cambio requerido en firmware:
+  - el GET debe consultar `serverURL + '?mac=' + macAddress`;
+  - el endpoint correcto es `/api/hware/sensor`, no `/api/hware/sendor`.
+- Validacion tecnica ejecutada:
+  - `node --check controllers/rfid.js`;
+  - `node --check routes/rfid.js`;
+  - `git diff --check` sin errores.
+- Validacion funcional pendiente:
+  - probar GET con MAC registrada, inexistente y sin MAC;
+  - probar POST y confirmar el insert esperado;
+  - confirmar el contenido JSON de `config`, especialmente `maxdistance`;
+  - definir autenticacion del dispositivo y persistencia especifica para conteo.
+
 ### 2026-07-21 - Asignacion exclusiva de playlist por pantalla
 - Objetivo: evitar que una pantalla reproduzca varias campañas por acumulacion de relaciones activas en `scr_pantallas_reproducciones`.
 - Diagnostico confirmado:

@@ -34,6 +34,7 @@
 - `controllers/whatsapp.js`
 - `controllers/pantallas.js`
 - `models/pantallas.js`: consulta playlist por pantalla y aplica la defensa de relacion activa mas reciente.
+- `routes/rfid.js` y `controllers/rfid.js`: reciben eventos del ESP32 y exponen la consulta de configuracion del sensor por MAC.
 - `controllers/mail.js`
 - `controllers/notificaciones.js`
 - `controllers/rfid.js`

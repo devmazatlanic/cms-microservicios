@@ -55,6 +55,7 @@ Pendiente de validacion:
 - El modulo de `notificaciones` esta deshabilitado temporalmente y sus rutas responden `410 Gone`.
 - El webhook de WhatsApp ya sincroniza `message_status` en `whatsapp_requests` cuando Meta envia `statuses`.
 - Las desconexiones sostenidas de pantallas `airplay` pueden generar una alerta interna de WhatsApp despues de 60 segundos; la plantilla y destinatarios se consultan desde el catalogo de la base de datos.
+- El modulo hardware expone `POST /api/hware/sensor` para registrar eventos del ESP32 y `GET /api/hware/sensor?mac=...` para consultar la configuracion del dispositivo sin insertar registros.
 
 ## Advertencias y pendientes de validacion
 - Pendiente de validacion: archivo `package.json` real usado en despliegue.

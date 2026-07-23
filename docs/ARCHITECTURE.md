@@ -94,3 +94,8 @@ Arquitectura tipo MVC ligera con responsabilidades separadas por carpeta, pero s
 - Configuracion sensible mezclada con codigo.
 - Pendiente de validacion: arquitectura real de despliegue y terminacion TLS.
 - Pendiente de validacion: confirmar que el detalle activo `11` tiene una plantilla Meta aprobada con tres parametros y que los telefonos almacenados cumplen el formato aceptado por Meta.
+
+## Nota sobre hardware / sensores
+- El prefijo `/api/hware` se monta desde `config/server.js` y la ruta `/sensor` acepta `POST` para registrar un evento y `GET` para devolver la configuracion asociada a una MAC.
+- El `GET` requiere `?mac=...` porque la configuracion pertenece a un dispositivo especifico; el firmware debe incluir la MAC en cada consulta de configuracion.
+- La persistencia actual del `POST /api/hware/sensor` reutiliza `checador_rfid` mediante `models/dispositivos.js`; queda pendiente confirmar que esa tabla sea la adecuada para eventos de conteo de personas.
