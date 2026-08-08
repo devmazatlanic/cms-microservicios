@@ -246,6 +246,10 @@ const pushAirplayPlaylistRefresh = async ({ io, tokens = [], reason = '', metada
     for (const token of normalizedTokens) {
         const presence = airplayPresence.get(token);
         if (!presence || presence.socketIds.size === 0) {
+            console.warn('[SOCKET][AIRPLAY] REFRESH OMITIDO: SOCKET NO CONECTADO:', {
+                token,
+                reason: String(reason || '').trim() || null
+            });
             results.push({
                 token,
                 emitted: false,

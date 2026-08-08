@@ -70,13 +70,13 @@ Arquitectura tipo MVC ligera con responsabilidades separadas por carpeta, pero s
 - Los mensajes entrantes con y sin contexto util ya se registran y existe un menu/bot textual inicial para orientar mensajes libres sin inventar flujos de negocio adicionales.
 
 ## Nota sobre pantallas / Socket `airplay`
-- El flujo `airplay` se consume desde un cliente externo en `cms-mazatlanic`, que se conecta por Socket.IO y usa un `clientId` persistente como token operativo de la pantalla.
+- El flujo `airplay` se consume desde un cliente externo en `cms-mazatlanic`, que se conecta por Socket.IO. La pantalla publica puede recibir el token canonico de `scr_pantallas` mediante `?token=...`; si no se proporciona, se conserva compatibilidad con el `clientId` persistente de `localStorage`.
 - El microservicio mantiene ahora un registro de presencia `airplay` en memoria del proceso Node, con `connected_at`, `last_seen_at`, `socket_ids` activos y un historial corto de eventos recientes de conexion/desconexion.
 - La inspeccion operativa visible de esta presencia se expone por el endpoint interno `GET /api/pantallas/socket/status`.
 - La reproduccion `airplay` opera ahora en modo hibrido: la pantalla solicita contenido una sola vez al conectar y los cambios posteriores de playlist se empujan desde el CMS externo por `POST /api/pantallas/socket/refresh`, protegido con API key interna.
 - La regla de asignacion del CMS es exclusiva: cada pantalla debe conservar una sola playlist activa; una nueva asignacion desactiva la anterior con `status_alta = 0` y conserva el registro para historial.
 - Como defensa de compatibilidad, `models/pantallas.js` selecciona la relacion activa mas reciente por pantalla cuando existen filas legacy duplicadas, evitando concatenar campañas en el consumidor aunque la limpieza de datos aun este pendiente.
-- El refresh push recalcula contenido por `token` conectado y contempla tres casos visibles en codigo: playlist asignada, consumidores de playlist default y pantallas explicitamente afectadas por cambios de asignacion o multimedia.
+- El refresh push recalcula contenido por `token` conectado y contempla tres casos visibles en codigo: playlist asignada, consumidores de playlist default y pantallas explicitamente afectadas por cambios de asignacion o multimedia. La respuesta separa el procesamiento HTTP (`next`) de la entrega Socket.IO (`delivery_next`, `delivery_status` y `delivery_message`).
 - El consumidor `siteweb` no forma parte aun de este flujo push y debe tratarse como alcance separado cuando se retome.
 - Pendiente de validacion/evolucion: si esta presencia debe persistirse en base de datos para auditoria, tablero administrativo o alertado formal.
 - Cuando el ultimo socket de una pantalla se desconecta, `helpers/sockets.js` notifica el evento mediante callback a `config/server.js`, que lo conecta con `helpers/airplay_notifications.js`.

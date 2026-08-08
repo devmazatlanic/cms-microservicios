@@ -142,9 +142,29 @@ const refresh_socket_airplay_playlist = async (request, response) => {
             }
         });
 
+        const totalEmitted = emitted.filter((item) => item.emitted).length;
+        const deliveryStatus = targets.length === 0
+            ? 'no_targets'
+            : totalEmitted === 0
+                ? 'no_connected_sockets'
+                : totalEmitted < targets.length
+                    ? 'partial'
+                    : 'emitted';
+        const deliveryNext = targets.length > 0 && totalEmitted === targets.length;
+        const deliveryMessage = deliveryStatus === 'no_targets'
+            ? 'NO SE ENCONTRARON PANTALLAS OBJETIVO PARA EL REFRESH.'
+            : deliveryStatus === 'no_connected_sockets'
+                ? 'NO HAY SOCKETS AIRPLAY CONECTADOS PARA LOS TOKENS SOLICITADOS.'
+                : deliveryStatus === 'partial'
+                    ? 'EL REFRESH SE EMITIO PARCIALMENTE A LAS PANTALLAS CONECTADAS.'
+                    : 'EL REFRESH SE EMITIO A LAS PANTALLAS CONECTADAS.';
+
         return response.status(200).json({
             next: true,
             message: 'SOCKET AIRPLAY REFRESH PROCESADO.',
+            delivery_next: deliveryNext,
+            delivery_status: deliveryStatus,
+            delivery_message: deliveryMessage,
             requested: {
                 tokens: Array.isArray(payload.tokens) ? payload.tokens : [],
                 playlist_id: payload.playlist_id || null,
@@ -153,7 +173,7 @@ const refresh_socket_airplay_playlist = async (request, response) => {
             },
             summary: {
                 total_targets: targets.length,
-                total_emitted: emitted.filter((item) => item.emitted).length,
+                total_emitted: totalEmitted,
                 total_connected: emitted.filter((item) => item.connected).length
             },
             response: emitted

@@ -675,3 +675,44 @@ Todo lo no confirmado debe tratarse como pendiente de validacion.
   - probar `/api/whatsapp/send_notification` sin API key y con API key
   - validar desde navegador un origen permitido y uno no permitido
   - validar en produccion cabecera `x-forwarded-proto` antes de activar `APP_FORCE_HTTPS`
+
+### 2026-08-08 - Identidad canonica y observabilidad del refresh AirPlay
+- Objetivo: preparar una validacion mas confiable del refresh de playlists sin romper las pantallas que aun utilizan el flujo historico.
+- Archivos modificados:
+  - `controllers/pantallas.js`
+  - `helpers/sockets.js`
+  - `docs/KNOWN_ISSUES.md`
+  - `docs/ARCHITECTURE.md`
+  - `docs/MAINTENANCE_LOG.md`
+- Cambio aplicado:
+  - el endpoint `POST /api/pantallas/socket/refresh` conserva `next: true` para compatibilidad con el transporte existente;
+  - se agregaron `delivery_next`, `delivery_status` y `delivery_message` para distinguir `no_targets`, `no_connected_sockets`, `partial` y `emitted`;
+  - Node registra explicitamente cuando un token solicitado no tiene sockets conectados;
+  - se documenta el uso del token canonico de pantalla y el fallback historico por `localStorage`.
+- Riesgo: medio, porque las pantallas que no reciban `?token=...` continuan dependiendo del identificador generado previamente por el navegador.
+- Validacion sugerida:
+  - consultar `/api/pantallas/socket/status` y confirmar el token de la pantalla;
+  - ejecutar una asignacion con la pantalla conectada;
+  - confirmar `total_targets = 1`, `total_emitted = 1`, `delivery_next = true` y `delivery_status = emitted`;
+  - repetir con la pantalla desconectada y confirmar `delivery_next = false` y `delivery_status = no_connected_sockets`.
+
+### 2026-08-08 - Verificacion del backend de playlist AirPlay
+- Objetivo: separar un posible fallo de consulta/emision Node de un fallo de render en el navegador CMS.
+- Validacion ejecutada con el token de prueba conectado:
+  - la consulta `getPlaylisPantallabyToken()` devolvio una playlist activa (`id_reproduccion = 2`) con un elemento multimedia `mp4`;
+  - `POST /api/pantallas/socket/refresh` respondio HTTP 200;
+  - `delivery_next = true`, `delivery_status = emitted`, `total_targets = 1`, `total_emitted = 1` y `total_connected = 1`;
+  - Node registro el refresh y no se identifico un fallo en la lectura de la playlist ni en la entrega al socket.
+- Conclusion: la correccion siguiente corresponde al cliente AirPlay del CMS, no a la consulta SQL ni al endpoint Node.
+- Pendiente: validar visualmente que el navegador procese el evento `response` y reemplace la playlist sin recarga.
+
+### 2026-08-08 - Aislamiento de conectividad CMS Docker -> Node
+- Objetivo: confirmar si el microservicio Node era responsable de que la pantalla no recibiera la playlist nueva.
+- Evidencia:
+  - `getPlaylisPantallabyToken()` devolvio la playlist activa esperada para el token de prueba;
+  - `POST /api/pantallas/socket/refresh` respondio `delivery_next = true` y `delivery_status = emitted`;
+  - una pantalla conectada recibio el evento `response` y mantuvo en el DOM el archivo de la playlist activa;
+  - desde el contenedor del CMS, `localhost:3000` no pudo conectarse;
+  - desde el mismo contenedor, `host.docker.internal:3000` alcanzo Node correctamente.
+- Conclusion: no se detecto un fallo en la consulta Node ni en la emision Socket.IO. La causa pendiente se encuentra en la URL estatica que utiliza el helper del CMS para notificar el refresh.
+- Accion pendiente en el repositorio CMS: consumir `MICROSERVICES_BASE_URL` y `MICROSERVICES_INTERNAL_API_KEY` desde `send_endpoint()`.
