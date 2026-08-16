@@ -9,6 +9,7 @@
 - Definir estrategia para sacar secretos sensibles del repositorio y gestionarlos por ambiente de forma segura.
 - Validar y activar estrategia final de HTTPS en produccion con GoDaddy/cPanel o proxy, usando `APP_TRUST_PROXY` y `APP_FORCE_HTTPS` cuando el entorno lo soporte.
 - Agregar controles anti-abuso a `/api/web/events/contactus`: rate limit, captcha o mecanismo equivalente.
+- Validar en base real el nuevo registro de leads externos en `tcr_seguimientos` antes de habilitarlo ampliamente en produccion.
 
 ### Media prioridad
 - Validar que no existan consumidores activos de `/api/notificaciones/*` despues de la desactivacion temporal.
@@ -46,6 +47,11 @@
 - Evaluar proveedor transaccional dedicado para correo no marketing:
   Postmark, Amazon SES, Resend u otra opcion equivalente, segun entregabilidad, costos y operacion.
 - Mantener una iteracion futura del bot de WhatsApp fase 2 como frente activo cuando se retome el modulo conversacional.
+- Probar el endpoint externo con alta nueva, tipo omitido, tipo invalido, campos opcionales ausentes y repeticion por correo/telefono.
+- Confirmar que el modo `6` y los tipos usados por las plataformas existan activos en `cat_modocontacto`.
+- Confirmar que exista un Director Comercial activo con `usu_idPuesto = 5`, telefono compatible y plantilla `notify_operativo_general` aprobada con tres parametros.
+- Revisar una estrategia de idempotencia para evitar hilos duplicados ante solicitudes simultaneas del mismo contacto.
+- Revisar por separado la regla del CMS para que las altas manuales del departamento `4` no notifiquen WhatsApp, mientras los leads externos si lo hagan.
 
 ## Criterio de uso
 - Agregar aqui pendientes activos que todavia no se implementan.

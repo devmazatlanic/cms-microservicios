@@ -22,6 +22,59 @@ module.exports = {
             });
         });
     },
+    /**
+     * Ejecuta varias operaciones usando la misma conexion del pool.
+     * @param {Function} callback
+     */
+    transaction(callback) {
+        return new Promise((resolve, reject) => {
+            pool.getConnection((connectionError, connection) => {
+                if (connectionError) {
+                    reject(connectionError);
+                    return;
+                }
+
+                const query = (sql, params = []) => new Promise((queryResolve, queryReject) => {
+                    connection.query(sql, params, (error, results) => {
+                        if (error) {
+                            queryReject(error);
+                            return;
+                        }
+
+                        queryResolve(results);
+                    });
+                });
+
+                connection.beginTransaction(async (transactionError) => {
+                    if (transactionError) {
+                        connection.release();
+                        reject(transactionError);
+                        return;
+                    }
+
+                    try {
+                        const result = await callback({ query });
+
+                        connection.commit((commitError) => {
+                            if (commitError) {
+                                connection.rollback(() => connection.release());
+                                reject(commitError);
+                                return;
+                            }
+
+                            connection.release();
+                            resolve(result);
+                        });
+                    } catch (error) {
+                        connection.rollback(() => {
+                            connection.release();
+                            reject(error);
+                        });
+                    }
+                });
+            });
+        });
+    },
     // Por si en algún cierre de servicio necesitas drenar el pool:
     close() {
         return new Promise((res, rej) =>

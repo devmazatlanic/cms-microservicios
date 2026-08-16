@@ -52,10 +52,27 @@ Pendiente de validacion:
 - El modulo de correo ya se configura por variables `MAIL_*`, por lo que el proveedor SMTP puede cambiarse por ambiente sin modificar codigo.
 - Existe un endpoint interno adicional para correo simple transaccional bajo `/api/mail/simple`.
 - Los endpoints internos sensibles ya admiten proteccion por `x-api-key` o `Authorization: Bearer ...`.
+- `POST /api/web/events/contactus` registra contactos externos como seguimientos activos del inbox CRM en `tcr_seguimientos`; conserva `next` y `message` y agrega identificadores del seguimiento y estado de notificaciones.
 - El modulo de `notificaciones` esta deshabilitado temporalmente y sus rutas responden `410 Gone`.
 - El webhook de WhatsApp ya sincroniza `message_status` en `whatsapp_requests` cuando Meta envia `statuses`.
 - Las desconexiones sostenidas de pantallas `airplay` pueden generar una alerta interna de WhatsApp despues de 60 segundos; la plantilla y destinatarios se consultan desde el catalogo de la base de datos.
 - El modulo hardware expone `POST /api/hware/sensor` para registrar eventos del ESP32 y `GET /api/hware/sensor?mac=...` para consultar la configuracion del dispositivo sin insertar registros.
+
+Contrato minimo visible de `POST /api/web/events/contactus`:
+
+```json
+{
+  "nombre": "ANTONIO",
+  "apellido_paterno": "RODRIGUEZ",
+  "apellido_materno": "MEDINA",
+  "correo": "cliente@example.com",
+  "celular": "6691455832",
+  "comentario": "SOLICITO UNA COTIZACION",
+  "tipo": "34"
+}
+```
+
+`tipo` es opcional y usa `6` cuando no se envia. El valor debe existir activo en `cat_modocontacto`. El nombre, correo o celular y comentario son los datos minimos validados por el endpoint; los demas campos pueden quedar como `null` en el payload del seguimiento.
 
 ## Advertencias y pendientes de validacion
 - Pendiente de validacion: archivo `package.json` real usado en despliegue.

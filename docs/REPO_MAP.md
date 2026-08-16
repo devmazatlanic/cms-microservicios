@@ -39,6 +39,7 @@
 - `controllers/notificaciones.js`
 - `controllers/rfid.js`
 - `models/eventos.js`
+- `helpers/crm_leads.js`: arma y envia la notificacion WhatsApp del lead externo al Director Comercial sin revertir el alta CRM si Meta falla.
 - `databases/config.js`
 
 ## Puntos de entrada
@@ -66,6 +67,8 @@
 - `helpers/sockets` concentra el flujo Socket.IO y el estado en memoria de presencia `airplay`
 - `helpers/airplay_notifications.js` programa alertas por desconexion, consulta destinatarios y envia plantillas de WhatsApp sin llamar al endpoint HTTP interno
 - `models/whatsapp.js` conserva la bitacora de mensajes y consulta la configuracion activa de notificaciones internas
+- `models/eventos.js` registra contactos externos como seguimientos, reutiliza el hilo activo por correo/telefono y consulta modo y Director Comercial.
+- `helpers/crm_leads.js` notifica al Director Comercial despues de persistir el seguimiento y devuelve el resultado de aceptacion del envio a Meta.
 - `cms-mazatlanic/src/application/controllers/pantallas_controller.php` orquesta altas, ediciones, activaciones y refresh de asignaciones.
 - `cms-mazatlanic/src/application/models/pantallas_model.php` centraliza el reemplazo transaccional de la playlist activa por pantalla.
 - `helpers/internal_api_key` protege endpoints internos confirmados mediante `x-api-key` o `Authorization: Bearer`

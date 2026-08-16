@@ -744,3 +744,37 @@ Todo lo no confirmado debe tratarse como pendiente de validacion.
   - asignar una playlist diferente con la pantalla conectada y confirmar cambio visual sin recarga;
   - repetir en XAMPP/produccion con la URL y API key reales.
 - No repetir como primera medida: no modificar nuevamente `helpers/sockets.js`, `models/pantallas.js` ni `buildHtml()` mientras el CMS no confirme que el refresh fue emitido.
+
+### 2026-08-16 - Registro de leads externos en el Inbox CRM
+- Objetivo: adaptar `POST /api/web/events/contactus` al flujo actual del inbox CRM sin romper la respuesta que consumen las plataformas externas.
+- Diagnostico confirmado:
+  - el flujo anterior registraba contactos en `tcr_lpcs` y rechazaba cualquier correo ya existente;
+  - el inbox actual utiliza `tcr_seguimientos` con el payload JSON normalizado dentro de `comentario`;
+  - el historial CRM conserva un `id_referencia`, cierra el movimiento activo y crea el siguiente movimiento;
+  - el Director Comercial se identifica por `tcr_usuarios.usu_idPuesto = 5` y perfil activo;
+  - el endpoint externo debe notificar al Director, mientras la regla para altas manuales internas del CMS queda fuera de esta implementacion.
+- Cambios aplicados:
+  - `databases/config.js` incorpora `transaction(callback)` sobre una conexion del pool, con commit, rollback y release;
+  - `models/eventos.js` normaliza campos, consulta `cat_modocontacto`, usa tipo `6` cuando no se envia y valida tipos estrictamente;
+  - `models/eventos.js` crea un seguimiento activo en `tcr_seguimientos` y reutiliza el hilo activo cuando coincide el correo o telefono;
+  - la comparacion telefonica considera formato local de 10 digitos y prefijos mexicanos `52`/`521`;
+  - `helpers/crm_leads.js` notifica al Director Comercial usando `notify_operativo_general`, registra el envio mediante `send_message()`, enmascara el telefono y sanitiza errores de bitacora en la respuesta publica;
+  - `controllers/web.js` conserva `next` y `message`, agrega ids del seguimiento y reporta por separado errores de correo o WhatsApp sin revertir el alta CRM.
+- Compatibilidad preservada:
+  - se mantiene la ruta `POST /api/web/events/contactus`;
+  - se mantiene la estructura minima de respuesta esperada por los frontends;
+  - los campos opcionales pueden quedar como `null` en el payload del inbox;
+  - los reintentos de contacto no crean un nuevo hilo mientras exista un seguimiento activo no terminal.
+- Validacion ejecutada:
+  - `node --check databases/config.js`;
+  - `node --check models/eventos.js`;
+  - `node --check helpers/crm_leads.js`;
+  - `node --check controllers/web.js`;
+  - `git diff --check` sin errores.
+- Validacion pendiente:
+  - ejecutar pruebas controladas contra la base real con alta nueva, repeticion, status terminal, tipo omitido y tipo invalido;
+  - confirmar visibilidad y asignacion en `crm_controller/vista_seguimientos`;
+  - confirmar recepcion de `notify_operativo_general` por el Director Comercial;
+  - validar comportamiento cuando no exista Director activo o falle SMTP/Meta;
+  - agregar rate limit/captcha antes de ampliar la exposicion publica.
+- Riesgo conocido: dos solicitudes simultaneas sin seguimiento previo pueden crear dos hilos porque aun no existe idempotencia persistente. La solucion actual reduce duplicados secuenciales y conserva el historial, pero no resuelve esa carrera.

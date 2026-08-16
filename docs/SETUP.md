@@ -79,6 +79,21 @@ Pendiente de validacion:
 5. Instalar dependencias si el entorno no las tiene.
 6. Iniciar el servicio usando el entrypoint `app.js`.
 
+## Prueba inicial del endpoint CRM
+El endpoint visible para formularios externos es `POST /api/web/events/contactus`. No requiere una variable de entorno adicional, pero si requiere conectividad a MySQL, configuracion valida de WhatsApp y, para correo, SMTP.
+
+Ejemplo minimo:
+
+```bash
+curl -X POST http://localhost:3000/api/web/events/contactus \
+  -H 'Content-Type: application/json' \
+  -d '{"nombre":"ANTONIO","correo":"cliente@example.com","comentario":"SOLICITO UNA COTIZACION"}'
+```
+
+La respuesta conserva `next` y `message`. Tambien puede incluir `seguimiento_id`, `reference_id`, `new_thread`, `mail_error` y `whatsapp_notification`. El resultado `next: true` confirma la persistencia CRM; el bloque `whatsapp_notification` informa si Meta acepto la notificacion, no una garantia de entrega final al dispositivo.
+
+Antes de probar con datos reales, confirmar que exista un modo activo `6` en `cat_modocontacto` y un Director Comercial activo con `usu_idPuesto = 5`.
+
 ## Nota sobre correo
 - `config/mail.js` ya no depende de un proveedor SMTP hardcodeado; el transporte se configura por `MAIL_*`.
 - El transporte SMTP se inicializa de forma perezosa al primer envio y usa pool, throttling y timeouts configurables.

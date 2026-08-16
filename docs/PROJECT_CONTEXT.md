@@ -52,6 +52,10 @@ Exponer microservicios de apoyo para operaciones ligadas a CRM/eventos, particul
 - Los endpoints internos confirmados (`/api/mail/simple` y `/api/whatsapp/send_notification`) ya pueden protegerse con API key.
 - El flujo de reproduccion de pantallas aplica la regla exclusiva desde `cms-mazatlanic`; el microservicio mantiene una defensa de lectura para relaciones activas legacy duplicadas.
 - El flujo `airplay` puede alertar por WhatsApp cuando el ultimo socket de una pantalla permanece desconectado durante el periodo configurado; utiliza el detalle activo de `cat_whatsapp_types_details` y sus destinatarios activos relacionados.
+- El endpoint externo `POST /api/web/events/contactus` registra leads en `tcr_seguimientos`, que es la fuente visible del inbox CRM. No crea directamente un registro en `tcr_lpcs`.
+- El endpoint consulta el modo activo en `cat_modocontacto`, usa el modo `6` por defecto y conserva el nombre del modo dentro del JSON de `comentario`.
+- Si encuentra un seguimiento activo no terminal para el mismo correo o telefono, cierra ese movimiento y agrega el nuevo mensaje dentro del mismo `id_referencia`; si no encuentra uno, crea un hilo nuevo.
+- La notificacion externa al Director Comercial se intenta despues de confirmar la transaccion CRM. Un fallo de correo o WhatsApp no revierte el registro persistido.
 
 ## Riesgos o vacios de contexto
 - Pendiente de validacion: topologia real de despliegue.
@@ -59,6 +63,8 @@ Exponer microservicios de apoyo para operaciones ligadas a CRM/eventos, particul
 - Pendiente de validacion: adaptador de base de datos real usado en produccion.
 - Hipotesis: el servicio forma parte de un ecosistema mayor y no opera como sistema autonomo.
 - No se encontro documentacion operativa ni pruebas automatizadas.
+- Pendiente de validacion: el Director Comercial se resuelve como el primer usuario activo con `usu_idPuesto = 5`; si no existe, el seguimiento se guarda sin responsable y puede no ser visible para un usuario normal del inbox.
+- Pendiente de validacion: el envio externo utiliza la plantilla `notify_operativo_general` con tres parametros y requiere que el telefono del perfil del Director sea compatible con WhatsApp.
 
 ## Prioridades de mantenimiento
 1. Confirmar la configuracion operativa real.

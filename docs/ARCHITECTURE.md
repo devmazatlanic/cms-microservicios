@@ -69,6 +69,16 @@ Arquitectura tipo MVC ligera con responsabilidades separadas por carpeta, pero s
 - El webhook ya procesa `messages` y `statuses`, recorriendo todos los `entry` y `changes` visibles en el payload y sincronizando `message_status` en la bitacora local.
 - Los mensajes entrantes con y sin contexto util ya se registran y existe un menu/bot textual inicial para orientar mensajes libres sin inventar flujos de negocio adicionales.
 
+## Nota sobre leads externos e Inbox CRM
+- `POST /api/web/events/contactus` es el punto de entrada para formularios externos y conserva el contrato de respuesta historico (`next` y `message`).
+- El controlador coordina persistencia, correo y WhatsApp; el modelo resuelve la transaccion de base de datos y `helpers/crm_leads.js` concentra la notificacion al Director Comercial.
+- La persistencia utiliza `databases/config.js#transaction()` para que el cierre del movimiento activo y la insercion del nuevo movimiento sean atomicos.
+- El modo de contacto se consulta en `cat_modocontacto`; el valor por defecto es `6`. El payload del inbox se guarda en `tcr_seguimientos.comentario` con las mismas claves visibles en el CRM (`nombre`, apellidos, `celular`, `email`, `asunto`, entre otras).
+- La deduplicacion operativa busca un seguimiento activo no terminal por correo o telefono. Los telefonos se comparan considerando formatos locales de 10 digitos y prefijos mexicanos `52`/`521`.
+- Un mensaje repetido cierra el movimiento activo con `status_alta = 3` y agrega el siguiente con el mismo `id_referencia`; un lead nuevo crea un hilo con `status_alta = 1`.
+- El Director Comercial se resuelve desde `tcr_usuarios` y `perfiles`, usando el primer usuario activo con `usu_idPuesto = 5`. La plantilla actual es `notify_operativo_general` con tres parametros.
+- El registro CRM se confirma antes de disparar correo o WhatsApp. Los fallos de side effects se informan en la respuesta y no eliminan el seguimiento ya guardado.
+
 ## Nota sobre pantallas / Socket `airplay`
 - El flujo `airplay` se consume desde un cliente externo en `cms-mazatlanic`, que se conecta por Socket.IO. La pantalla publica puede recibir el token canonico de `scr_pantallas` mediante `?token=...`; si no se proporciona, se conserva compatibilidad con el `clientId` persistente de `localStorage`.
 - El microservicio mantiene ahora un registro de presencia `airplay` en memoria del proceso Node, con `connected_at`, `last_seen_at`, `socket_ids` activos y un historial corto de eventos recientes de conexion/desconexion.
@@ -94,6 +104,9 @@ Arquitectura tipo MVC ligera con responsabilidades separadas por carpeta, pero s
 - Configuracion sensible mezclada con codigo.
 - Pendiente de validacion: arquitectura real de despliegue y terminacion TLS.
 - Pendiente de validacion: confirmar que el detalle activo `11` tiene una plantilla Meta aprobada con tres parametros y que los telefonos almacenados cumplen el formato aceptado por Meta.
+- Pendiente de validacion: confirmar en la base real que `tcr_seguimientos.id_quienregistro` admite `NULL` o que siempre exista un Director Comercial activo para leads externos.
+- Pendiente de validacion: una solicitud simultanea sin seguimiento activo puede crear dos hilos porque aun no existe una llave de idempotencia o restriccion unica por contacto.
+- Pendiente de validacion: el flujo de captura manual del CMS para departamentos internos, especialmente departamento `4`, no fue modificado en esta fase; su regla de no notificar WhatsApp debe revisarse por separado.
 
 ## Nota sobre hardware / sensores
 - El prefijo `/api/hware` se monta desde `config/server.js` y la ruta `/sensor` acepta `POST` para registrar un evento y `GET` para devolver la configuracion asociada a una MAC.
