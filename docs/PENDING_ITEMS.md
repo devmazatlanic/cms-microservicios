@@ -21,7 +21,7 @@
 - Definir si `routes/helpers.js` debe montarse o eliminarse en una fase futura.
 - Definir si la presencia `airplay` debe persistirse en base de datos para auditoria, dashboard o alertado, ya que en esta fase solo se mantiene en memoria del proceso Node.
 - Extender el modelo push sin polling al consumidor `siteweb` cuando se retome ese frente, manteniendolo fuera del alcance actual de `airplay`.
-- Migrar en `cms-mazatlanic` los consumos legacy a microservicios que siguen hardcodeados en `src/application/helpers/tools_helper.php`, especialmente IP interna y fallback de `x-api-key` para correo y WhatsApp.
+- Corregir en `cms-mazatlanic` `src/application/helpers/tools_helper.php`: `send_endpoint()` debe consumir `MICROSERVICES_BASE_URL` y `MICROSERVICES_INTERNAL_API_KEY` en lugar de `localhost:3000` y credenciales hardcodeadas; despues validar el refresh AirPlay extremo a extremo. El resto de consumos legacy de correo y WhatsApp permanece como deuda separada.
 - Validar en CMS que al asignar una segunda playlist a la misma pantalla la primera quede `INACTIVO`, que la pantalla reproduzca solo la nueva y que la activacion manual de una relacion historica no genere dos relaciones activas.
 - Auditar relaciones legacy de `scr_pantallas_reproducciones` con mas de una fila activa por `id_pantalla`; definir una limpieza controlada o confirmar que la defensa de lectura por relacion mas reciente es suficiente para la operacion.
 - Confirmar si el flujo `airplay` debe aplicar vigencia por fecha y un orden deterministico de multimedia antes de cerrar definitivamente la salida a produccion del catalogo de playlists.

@@ -716,3 +716,31 @@ Todo lo no confirmado debe tratarse como pendiente de validacion.
   - desde el mismo contenedor, `host.docker.internal:3000` alcanzo Node correctamente.
 - Conclusion: no se detecto un fallo en la consulta Node ni en la emision Socket.IO. La causa pendiente se encuentra en la URL estatica que utiliza el helper del CMS para notificar el refresh.
 - Accion pendiente en el repositorio CMS: consumir `MICROSERVICES_BASE_URL` y `MICROSERVICES_INTERNAL_API_KEY` desde `send_endpoint()`.
+
+### 2026-08-16 - Cierre de fase AirPlay y traspaso a la siguiente tarea
+- Objetivo: consolidar la solucion implementada, separar los componentes validados del bloqueo pendiente y dejar un punto de entrada claro para la siguiente iteracion.
+- Soluciones aplicadas:
+  - Node consulta una sola playlist activa por token y usa la relacion activa mas reciente como defensa ante datos legacy duplicados.
+  - Node mantiene presencia `airplay` en memoria y expone `GET /api/pantallas/socket/status` para diagnostico interno.
+  - Node expone `POST /api/pantallas/socket/refresh`, protegido por API key, y diferencia procesamiento HTTP de entrega Socket.IO mediante `delivery_next`, `delivery_status` y `delivery_message`.
+  - El CMS aplica reemplazo exclusivo de playlist por pantalla y verifica el estado persistido antes de notificar el refresh.
+  - La pantalla publica conserva el contenido actual ante respuestas vacias o incompatibles y reconstruye el carrusel usando la API Bootstrap 5.
+  - El token canonico puede viajar en `?token=...`, conservando fallback historico por `localStorage` para compatibilidad.
+- Evidencia validada:
+  - la base de datos dejo `MIC` activa y la playlist anterior inactiva para la pantalla de prueba;
+  - `getPlaylisPantallabyToken()` devolvio el multimedia activo esperado;
+  - el endpoint de refresh respondio `delivery_status = emitted` con sockets conectados;
+  - el navegador recibio la respuesta inicial y un refresh posterior, y el DOM mostro el archivo de la playlist activa.
+- Bloqueador identificado:
+  - el CMS corre dentro de `cms-mazatlanic-web` y `send_endpoint()` intenta usar `localhost:3000`;
+  - dentro del contenedor, `localhost` no apunta al Node del host y produce `Connection refused`;
+  - `host.docker.internal:3000` responde correctamente desde el contenedor con la API key configurada;
+  - por lo tanto, el problema restante no corresponde a SQL Node, Socket.IO ni al carrusel, sino al helper de transporte del CMS.
+- Estado: fase AirPlay documentada y backend Node validado; queda pendiente un ajuste pequeño en el repositorio CMS antes de declarar resuelto el refresh extremo a extremo.
+- Siguiente tarea:
+  - actualizar `cms-mazatlanic/src/application/helpers/tools_helper.php` para construir la URL desde `MICROSERVICES_BASE_URL`;
+  - obtener la credencial desde `MICROSERVICES_INTERNAL_API_KEY` sin hardcodearla;
+  - validar desde el contenedor un HTTP 200 autenticado;
+  - asignar una playlist diferente con la pantalla conectada y confirmar cambio visual sin recarga;
+  - repetir en XAMPP/produccion con la URL y API key reales.
+- No repetir como primera medida: no modificar nuevamente `helpers/sockets.js`, `models/pantallas.js` ni `buildHtml()` mientras el CMS no confirme que el refresh fue emitido.

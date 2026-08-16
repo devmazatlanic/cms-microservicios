@@ -54,6 +54,8 @@
 
 Nota de integracion: Node puede ejecutarse directamente en `http://localhost:3000`; la URL que debe cambiar por entorno es la que usa el CMS PHP. En Docker Desktop el CMS debe usar `http://host.docker.internal:3000`; bajo XAMPP, si ambos servicios comparten maquina, puede usar `http://127.0.0.1:3000`.
 
+Estado de la integracion AirPlay: la configuracion Docker ya expone `MICROSERVICES_BASE_URL` y `MICROSERVICES_INTERNAL_API_KEY`, pero la validacion funcional completa depende de que `send_endpoint()` en `cms-mazatlanic` consuma esas variables. No tomar la respuesta HTTP de asignacion como confirmacion de refresh hasta validar `delivery_status = emitted`.
+
 Pendiente de validacion:
 - variables adicionales esperadas por produccion
 - ubicacion final de secretos que hoy residen principalmente en `.env` y otros archivos locales del repositorio

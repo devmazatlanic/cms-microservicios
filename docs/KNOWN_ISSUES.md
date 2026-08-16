@@ -67,3 +67,10 @@ El historial de cambios aplicados se conserva en `MAINTENANCE_LOG.md`.
 - Confirmar en la base de datos que `cat_whatsapp_types_details.id = 11` esta activo, que `name` contiene el nombre tecnico aprobado por Meta y que existen destinatarios activos en `cat_correosinternos`.
 - Validar en pruebas controladas la cancelacion por reconexion, el envio despues de 60 segundos y el comportamiento cuando un destinatario falla.
 - Confirmar el contrato final del ESP32: usar `/api/hware/sensor` para `POST` y `/api/hware/sensor?mac=...` para `GET`, ademas de definir autenticacion del dispositivo.
+
+## Estado de la fase AirPlay
+- Resuelto en Node: consulta de la playlist activa por token, presencia de sockets en memoria, endpoint interno de estado y refresh push con resultado de entrega.
+- Resuelto en el flujo CMS: regla de una sola playlist activa por pantalla, verificacion posterior de la asignacion y reconstruccion compatible del carrusel Bootstrap 5.
+- Validado localmente: la pantalla recibe la respuesta inicial y los eventos `response` posteriores; Node entrega `delivery_status = emitted` cuando existe un socket conectado.
+- Bloqueador pendiente fuera de este repositorio: el helper `send_endpoint()` de `cms-mazatlanic` aun usa `localhost:3000` y no consume `MICROSERVICES_BASE_URL`. Desde Docker debe usar `http://host.docker.internal:3000`; bajo XAMPP debe usar la direccion real del Node.
+- Proxima tarea recomendada: corregir el helper del CMS para consumir `MICROSERVICES_BASE_URL` y `MICROSERVICES_INTERNAL_API_KEY`, probar la asignacion completa sin recargar y despues retirar esta incidencia de los pendientes activos.
