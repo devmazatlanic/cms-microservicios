@@ -171,7 +171,7 @@ const get_whatsapp_notification_config_by_type_detail = async (_id_whatsapp_type
   const sql = `
     SELECT
       d.id AS id_whatsapp_type_detail,
-      TRIM(d.nombre) AS template_name,
+      TRIM(d.name) AS template_name,
       d.parametros AS template_parameters,
       c.phone_number,
       UPPER(TRIM(c.nombre_completo)) AS recipient_name

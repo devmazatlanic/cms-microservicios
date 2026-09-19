@@ -119,7 +119,8 @@ const contactus = async (request, response) => {
             director: result.director,
             payload: result.payload,
             seguimientoId: result.id,
-            isNewThread: result.is_new_thread
+            isNewThread: result.is_new_thread,
+            modeId: result.mode_id
         });
 
         // RESPONDEMOS AL FRONT

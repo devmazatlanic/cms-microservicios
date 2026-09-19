@@ -71,12 +71,13 @@ Arquitectura tipo MVC ligera con responsabilidades separadas por carpeta, pero s
 
 ## Nota sobre leads externos e Inbox CRM
 - `POST /api/web/events/contactus` es el punto de entrada para formularios externos y conserva el contrato de respuesta historico (`next` y `message`).
-- El controlador coordina persistencia, correo y WhatsApp; el modelo resuelve la transaccion de base de datos y `helpers/crm_leads.js` concentra la notificacion al Director Comercial.
+- El controlador coordina persistencia, correo y WhatsApp; el modelo resuelve la transaccion de base de datos y `helpers/crm_leads.js` concentra el ruteo/notificacion del lead.
 - La persistencia utiliza `databases/config.js#transaction()` para que el cierre del movimiento activo y la insercion del nuevo movimiento sean atomicos.
 - El modo de contacto se consulta en `cat_modocontacto`; el valor por defecto es `6`. El payload del inbox se guarda en `tcr_seguimientos.comentario` con las mismas claves visibles en el CRM (`nombre`, apellidos, `celular`, `email`, `asunto`, entre otras).
 - La deduplicacion operativa busca un seguimiento activo no terminal por correo o telefono. Los telefonos se comparan considerando formatos locales de 10 digitos y prefijos mexicanos `52`/`521`.
 - Un mensaje repetido cierra el movimiento activo con `status_alta = 3` y agrega el siguiente con el mismo `id_referencia`; un lead nuevo crea un hilo con `status_alta = 1`.
-- El Director Comercial se resuelve desde `tcr_usuarios` y `perfiles`, usando el primer usuario activo con `usu_idPuesto = 5`. La plantilla actual es `notify_operativo_general` con tres parametros.
+- El ruteo de WhatsApp consulta `crm_lead_notification_routes` por `id_modo_contacto`. Si encuentra ruta activa, usa `id_whatsapp_type_detail` para recuperar la plantilla tecnica desde `cat_whatsapp_types_details.name` y los destinatarios activos desde `cat_correosinternos`.
+- Si no existe ruta configurada, si falta plantilla o si no hay destinatarios activos, el flujo conserva fallback al Director Comercial. El Director se resuelve desde `tcr_usuarios` y `perfiles`, usando el primer usuario activo con `usu_idPuesto = 5`. La plantilla fallback actual es `notify_operativo_general` con tres parametros.
 - El registro CRM se confirma antes de disparar correo o WhatsApp. Los fallos de side effects se informan en la respuesta y no eliminan el seguimiento ya guardado.
 
 ## Nota sobre pantallas / Socket `airplay`
@@ -103,7 +104,7 @@ Arquitectura tipo MVC ligera con responsabilidades separadas por carpeta, pero s
 - Duplicacion de logica en modelos y sockets.
 - Configuracion sensible mezclada con codigo.
 - Pendiente de validacion: arquitectura real de despliegue y terminacion TLS.
-- Pendiente de validacion: confirmar que el detalle activo `11` tiene una plantilla Meta aprobada con tres parametros y que los telefonos almacenados cumplen el formato aceptado por Meta.
+- Pendiente de validacion: confirmar que el detalle activo `11` y los detalles usados por `crm_lead_notification_routes` tienen plantillas Meta aprobadas con tres parametros y que los telefonos almacenados cumplen el formato aceptado por Meta.
 - Pendiente de validacion: confirmar en la base real que `tcr_seguimientos.id_quienregistro` admite `NULL` o que siempre exista un Director Comercial activo para leads externos.
 - Pendiente de validacion: una solicitud simultanea sin seguimiento activo puede crear dos hilos porque aun no existe una llave de idempotencia o restriccion unica por contacto.
 - Pendiente de validacion: el flujo de captura manual del CMS para departamentos internos, especialmente departamento `4`, no fue modificado en esta fase; su regla de no notificar WhatsApp debe revisarse por separado.

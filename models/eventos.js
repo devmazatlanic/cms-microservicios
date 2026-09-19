@@ -295,6 +295,7 @@ const web_contactus = async (_data = {}) => {
                 id: result.insertId,
                 reference_id: referenceId,
                 is_new_thread: false,
+                mode_id: Number(mode.id),
                 director,
                 payload
             };
@@ -313,6 +314,7 @@ const web_contactus = async (_data = {}) => {
             id: result.insertId,
             reference_id: result.insertId,
             is_new_thread: true,
+            mode_id: Number(mode.id),
             director,
             payload
         };

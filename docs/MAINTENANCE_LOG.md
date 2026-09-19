@@ -778,3 +778,31 @@ Todo lo no confirmado debe tratarse como pendiente de validacion.
   - validar comportamiento cuando no exista Director activo o falle SMTP/Meta;
   - agregar rate limit/captcha antes de ampliar la exposicion publica.
 - Riesgo conocido: dos solicitudes simultaneas sin seguimiento previo pueden crear dos hilos porque aun no existe idempotencia persistente. La solucion actual reduce duplicados secuenciales y conserva el historial, pero no resuelve esa carrera.
+
+### 2026-09-19 - Ruteo configurable de WhatsApp para leads externos
+- Objetivo: permitir que `POST /api/web/events/contactus` notifique por WhatsApp a distintos destinatarios segun el `tipo`/`id_modo_contacto`, conservando al Director Comercial como fallback.
+- Diagnostico confirmado:
+  - el endpoint ya validaba `tipo` contra `cat_modocontacto` y lo guardaba en el payload del seguimiento;
+  - la notificacion estaba acoplada al Director Comercial (`usu_idPuesto = 5`);
+  - ya existia una convencion reutilizable para WhatsApp basada en `cat_whatsapp_types_details` y `cat_correosinternos`.
+- Cambios aplicados:
+  - `models/eventos.js` devuelve `mode_id` junto con el resultado del seguimiento;
+  - `controllers/web.js` pasa `mode_id` al helper de notificacion;
+  - `helpers/crm_leads.js` consulta `crm_lead_notification_routes` por `id_modo_contacto`;
+  - si encuentra ruta activa, obtiene la plantilla y destinatarios mediante `id_whatsapp_type_detail`;
+  - si no existe ruta, falta plantilla o no hay destinatarios activos, conserva fallback al Director Comercial;
+  - `models/whatsapp.js` consulta `cat_whatsapp_types_details.name` como nombre tecnico de plantilla, alineado con la documentacion vigente.
+- Compatibilidad preservada:
+  - la ruta publica y el contrato base (`next`, `message`) no cambian;
+  - `whatsapp_notification` sigue reportando el resultado del side effect y agrega trazabilidad de `route_source`;
+  - un fallo de WhatsApp no revierte el seguimiento ya guardado.
+- Validacion ejecutada:
+  - `node --check helpers/crm_leads.js`;
+  - `node --check models/eventos.js`;
+  - `node --check controllers/web.js`;
+  - `node --check models/whatsapp.js`.
+- Validacion pendiente:
+  - probar con un `tipo` que tenga ruta activa y confirmar `route_source = configured_route`;
+  - probar con un `tipo` sin ruta y confirmar fallback al Director Comercial;
+  - confirmar que `cat_whatsapp_types_details.name` contiene el nombre tecnico aprobado por Meta;
+  - confirmar que `cat_correosinternos.phone_number` esta en formato compatible y activo para cada detalle.

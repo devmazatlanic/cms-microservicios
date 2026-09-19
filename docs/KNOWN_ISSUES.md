@@ -7,6 +7,7 @@ El historial de cambios aplicados se conserva en `MAINTENANCE_LOG.md`.
 - 2026-07-22: se corrigio la consulta de configuracion de alertas AirPlay que interpretaba el detalle `11` con base numerica `11` y consultaba el registro `12`; tambien se corrigio la columna de plantilla de `nombre` a `name`. Falta confirmar el comportamiento con la base de datos real y reiniciar Node para cargar el cambio.
 - 2026-07-23: se agrego `GET /api/hware/sensor?mac=...` para atender la consulta de configuracion del ESP32 sin registrar eventos. Falta actualizar el firmware y probarlo con el dispositivo real.
 - 2026-08-16: se implemento el registro de `POST /api/web/events/contactus` en `tcr_seguimientos`, con modo de contacto dinamico, modo `6` por defecto, reutilizacion del hilo activo y notificacion al Director Comercial. Falta validar contra la base real, el inbox, correo y Meta.
+- 2026-09-19: se agrego ruteo configurable de WhatsApp para leads externos mediante `crm_lead_notification_routes`, con fallback al Director Comercial. Falta validar con registros reales por `tipo`, destinatarios activos y plantilla aprobada en Meta.
 
 ## Prioridad Alta
 - Secretos sensibles detectados en codigo o repositorio:
@@ -34,7 +35,7 @@ El historial de cambios aplicados se conserva en `MAINTENANCE_LOG.md`.
 - El nombre de la plantilla se consulta dinamicamente desde `cat_whatsapp_types_details.name`, pero la alerta mantiene un contrato de tres parametros y el idioma `es` en codigo; cambiar cantidad, orden o idioma requiere validacion adicional.
 - La deduplicacion del endpoint de leads usa correo o telefono y considera variantes mexicanas del telefono, pero no existe una llave de idempotencia para solicitudes simultaneas; dos peticiones concurrentes podrian abrir hilos duplicados.
 - Si no existe un Director Comercial activo (`usu_idPuesto = 5`), el lead se persiste sin responsable y la notificacion queda omitida; falta confirmar que el inbox lo muestre para los perfiles administradores.
-- La notificacion de leads usa `notify_operativo_general` directamente en el helper; si la plantilla cambia de nombre o cantidad de parametros, requiere una validacion o parametrizacion futura.
+- La notificacion de leads ya puede usar rutas configuradas por `id_modo_contacto`, pero el contrato de mensaje conserva tres parametros y la plantilla fallback `notify_operativo_general`; cambiar cantidad, orden o idioma requiere validacion adicional.
 
 ## Prioridad Baja
 - Codigo comentado abundante y logs directos en produccion.
@@ -75,10 +76,12 @@ El historial de cambios aplicados se conserva en `MAINTENANCE_LOG.md`.
 - Validar en pruebas controladas la cancelacion por reconexion, el envio despues de 60 segundos y el comportamiento cuando un destinatario falla.
 - Confirmar el contrato final del ESP32: usar `/api/hware/sensor` para `POST` y `/api/hware/sensor?mac=...` para `GET`, ademas de definir autenticacion del dispositivo.
 - Confirmar que el modo `6` existe activo en `cat_modocontacto` y que cada `tipo` utilizado por las plataformas corresponde a un catalogo activo.
+- Confirmar que `crm_lead_notification_routes` exista en produccion con columnas `id_modo_contacto`, `id_whatsapp_type_detail` y `status_alta`, y que cada tipo con destinatarios especiales tenga una ruta activa.
 - Probar `POST /api/web/events/contactus` con alta nueva, tipo omitido, tipo invalido, solo correo, solo celular, campos opcionales ausentes y datos con espacios/mayusculas.
+- Probar `POST /api/web/events/contactus` con un tipo con ruta configurada y otro sin ruta para confirmar `route_source = configured_route` y `route_source = commercial_director`.
 - Probar un segundo mensaje con correo o celular equivalente (`669...`, `52669...`, `521669...`) y confirmar que se conserva el mismo `id_referencia` y solo queda un movimiento activo.
 - Probar un lead cuyo hilo anterior tenga status terminal `11`, `14` o `15` y confirmar que se abre un nuevo hilo.
-- Confirmar que el Director Comercial activo (`usu_idPuesto = 5`) aparece como responsable en el inbox y recibe `notify_operativo_general`; validar tambien el comportamiento sin Director configurado.
+- Confirmar que el Director Comercial activo (`usu_idPuesto = 5`) aparece como responsable en el inbox y recibe `notify_operativo_general` cuando aplica fallback; validar tambien el comportamiento sin Director configurado.
 - Revisar en una fase separada la regla de notificacion para altas manuales del CMS: departamento `4` no debe notificar al Director, mientras que altas externas si deben hacerlo.
 
 ## Estado de la fase AirPlay
