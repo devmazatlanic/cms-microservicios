@@ -806,3 +806,21 @@ Todo lo no confirmado debe tratarse como pendiente de validacion.
   - probar con un `tipo` sin ruta y confirmar fallback al Director Comercial;
   - confirmar que `cat_whatsapp_types_details.name` contiene el nombre tecnico aprobado por Meta;
   - confirmar que `cat_correosinternos.phone_number` esta en formato compatible y activo para cada detalle.
+
+### 2026-09-21 - Fecha estimada para leads externos en calendario CRM
+- Objetivo: asegurar que los leads creados por `POST /api/web/events/contactus` aparezcan en los calendarios/reportes que dependen de `tcr_seguimientos.fecha_estimada`.
+- Diagnostico confirmado:
+  - los leads nuevos se insertaban sin `fecha_estimada`;
+  - los mensajes repetidos solo conservaban `fecha_estimada` si el movimiento activo anterior ya la tenia;
+  - esto podia dejar leads visibles en el inbox pero fuera de calendarios operativos.
+- Cambios aplicados:
+  - para leads nuevos, `models/eventos.js` inserta `fecha_estimada = CURDATE()`;
+  - para mensajes repetidos, conserva la fecha previa y usa `CURDATE()` cuando el seguimiento activo no tenga fecha.
+- Compatibilidad preservada:
+  - no cambia la ruta ni el payload esperado por plataformas externas;
+  - no altera el `id_referencia`, la deduplicacion por correo/telefono ni el ruteo WhatsApp.
+- Validacion pendiente:
+  - crear un lead externo nuevo y confirmar que `fecha_estimada` sea la fecha del registro;
+  - repetir un lead sin fecha previa y confirmar que el nuevo movimiento tenga fecha del registro;
+  - repetir un lead con fecha previa y confirmar que la fecha se conserve;
+  - validar que el ejecutivo vea el lead en calendario CRM.

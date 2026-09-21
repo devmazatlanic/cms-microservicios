@@ -276,7 +276,7 @@ const web_contactus = async (_data = {}) => {
                 INSERT INTO tcr_seguimientos
                     (id_referencia, id_quienregistro, id_cuenta, id_contacto, id_statuslpc,
                      id_tabla, tabla, origen_registro, status_alta, fecha_estimada, comentario)
-                VALUES (?, ?, ?, ?, ?, ?, ?, 'SISTEMA', 1, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, 'SISTEMA', 1, COALESCE(?, CURDATE()), ?)
             `, [
                 referenceId,
                 ownerId,
@@ -304,8 +304,8 @@ const web_contactus = async (_data = {}) => {
         const payload = buildLeadPayload(data, mode);
         const result = await query(`
             INSERT INTO tcr_seguimientos
-                (id_quienregistro, id_statuslpc, origen_registro, status_alta, comentario)
-            VALUES (?, 1, 'SISTEMA', 1, ?)
+                (id_quienregistro, id_statuslpc, origen_registro, status_alta, fecha_estimada, comentario)
+            VALUES (?, 1, 'SISTEMA', 1, CURDATE(), ?)
         `, [directorId, JSON.stringify(payload)]);
 
         return {

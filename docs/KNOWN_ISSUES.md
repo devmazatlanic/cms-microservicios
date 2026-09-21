@@ -8,6 +8,7 @@ El historial de cambios aplicados se conserva en `MAINTENANCE_LOG.md`.
 - 2026-07-23: se agrego `GET /api/hware/sensor?mac=...` para atender la consulta de configuracion del ESP32 sin registrar eventos. Falta actualizar el firmware y probarlo con el dispositivo real.
 - 2026-08-16: se implemento el registro de `POST /api/web/events/contactus` en `tcr_seguimientos`, con modo de contacto dinamico, modo `6` por defecto, reutilizacion del hilo activo y notificacion al Director Comercial. Falta validar contra la base real, el inbox, correo y Meta.
 - 2026-09-19: se agrego ruteo configurable de WhatsApp para leads externos mediante `crm_lead_notification_routes`, con fallback al Director Comercial. Falta validar con registros reales por `tipo`, destinatarios activos y plantilla aprobada en Meta.
+- 2026-09-21: se corrigio el alta de leads externos para asignar `fecha_estimada` con la fecha de registro cuando no exista una fecha previa. Falta validar visibilidad en reportes y calendarios del CRM.
 
 ## Prioridad Alta
 - Secretos sensibles detectados en codigo o repositorio:

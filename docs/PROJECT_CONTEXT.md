@@ -54,7 +54,7 @@ Exponer microservicios de apoyo para operaciones ligadas a CRM/eventos, particul
 - El flujo `airplay` puede alertar por WhatsApp cuando el ultimo socket de una pantalla permanece desconectado durante el periodo configurado; utiliza el detalle activo de `cat_whatsapp_types_details` y sus destinatarios activos relacionados.
 - El endpoint externo `POST /api/web/events/contactus` registra leads en `tcr_seguimientos`, que es la fuente visible del inbox CRM. No crea directamente un registro en `tcr_lpcs`.
 - El endpoint consulta el modo activo en `cat_modocontacto`, usa el modo `6` por defecto y conserva el nombre del modo dentro del JSON de `comentario`.
-- Si encuentra un seguimiento activo no terminal para el mismo correo o telefono, cierra ese movimiento y agrega el nuevo mensaje dentro del mismo `id_referencia`; si no encuentra uno, crea un hilo nuevo.
+- Si encuentra un seguimiento activo no terminal para el mismo correo o telefono, cierra ese movimiento y agrega el nuevo mensaje dentro del mismo `id_referencia`; si no encuentra uno, crea un hilo nuevo. Los nuevos movimientos conservan la `fecha_estimada` anterior cuando existe y usan la fecha de registro cuando no existe, para mantener visibilidad en calendarios del CRM.
 - La notificacion externa por WhatsApp se intenta despues de confirmar la transaccion CRM. Primero busca una ruta activa en `crm_lead_notification_routes` por `id_modo_contacto`; si existe, usa el `id_whatsapp_type_detail` configurado para obtener plantilla y destinatarios desde `cat_whatsapp_types_details` y `cat_correosinternos`. Si no existe ruta o esta incompleta, conserva fallback al Director Comercial.
 - Un fallo de correo o WhatsApp no revierte el registro persistido.
 
