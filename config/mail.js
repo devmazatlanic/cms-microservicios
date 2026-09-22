@@ -1,4 +1,5 @@
 const nodemailer = require('nodemailer');
+const { parseMailAttachments } = require('../helpers/mail_attachments');
 const path = require('path');
 const fs = require('fs');
 const axios = require('axios');
@@ -380,6 +381,7 @@ const mail_enviar_reportebancos = async (datos) => {
 
 const mail_simple_notification = async (datos) => {
     try {
+        const attachments = parseMailAttachments(datos.attachments);
         const contenidoHTML = await getSimpleNotification(datos);
 
         const mailOptions = {
@@ -394,7 +396,7 @@ const mail_simple_notification = async (datos) => {
                     path: './public/assets/images/logomic_correos.png',
                     cid: 'logoMIC'
                 }
-            ]
+            ].concat(attachments)
         };
 
         const info = await sendMail(mailOptions);
@@ -402,7 +404,9 @@ const mail_simple_notification = async (datos) => {
         return info;
     } catch (error) {
         console.error('ERROR AL ENVIAR EL CORREO: ', error);
-        throw new Error(`ERROR AL ENVIAR EL CORREO SIMPLE: ${error.message}`);
+        const mailError = new Error(`ERROR AL ENVIAR EL CORREO SIMPLE: ${error.message}`);
+        mailError.statusCode = error.statusCode;
+        throw mailError;
     }
 };
 

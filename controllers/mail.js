@@ -22,7 +22,8 @@ const post_simple_notification = async (request, response) => {
             name,
             comment,
             subject,
-            cc
+            cc,
+            attachments: request.body?.attachments
         });
 
         return response.status(200).json({
@@ -30,7 +31,7 @@ const post_simple_notification = async (request, response) => {
             message: 'SE ENVIO EL CORREO CON EXITO.'
         });
     } catch (error) {
-        return response.status(500).json({
+        return response.status(error.statusCode === 400 ? 400 : 500).json({
             next: false,
             message: error.message
         });

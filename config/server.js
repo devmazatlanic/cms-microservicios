@@ -1,4 +1,5 @@
 const express = require('express');
+const { requireInternalApiKey } = require('../helpers/internal_api_key');
 const fs = require('fs');
 const cors = require('cors');
 const http = require('http');
@@ -210,6 +211,20 @@ class Server {
         }));
         this.app.use(this.enforceHttps.bind(this));
         // PARSEO Y LECTURA DEL BODY
+        // 10 MiB binarios requieren ~13.34 MiB en base64. Solo esta ruta
+        // autenticada recibe un presupuesto mayor; el resto conserva 100 KB.
+        this.app.post(`${this.mail_path}/simple`, requireInternalApiKey,
+            express.json({ limit: '15mb' }), (error, req, res, next) => {
+                if (error.type === 'entity.too.large' || error.type === 'entity.parse.failed') {
+                    return res.status(error.type === 'entity.too.large' ? 413 : 400).json({
+                        next: false,
+                        message: error.type === 'entity.too.large'
+                            ? 'LA PETICION DE CORREO SUPERA EL LIMITE PERMITIDO.'
+                            : 'EL JSON DE LA PETICION NO ES VALIDO.'
+                    });
+                }
+                return next(error);
+            });
         this.app.use(express.json({ limit: '100kb' }));
         // DIRECTORIO PUBLICO
         this.app.use(express.static('public'));
