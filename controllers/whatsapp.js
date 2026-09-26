@@ -224,6 +224,7 @@ const send_notification = async (request, response) => {
                         }
                         break;
                     case 'notify_actualizacion_seguimiento':
+                        body.header_image_url = "http://cdn.mztmic.com:8000/plantillas_whatsapp/header/mazatlanic-seguimientos.png";
                         if (body.components.length === 0 || !body.header_image_url) {
                             return response.status(400).json({
                                 next: false,
