@@ -824,3 +824,26 @@ Todo lo no confirmado debe tratarse como pendiente de validacion.
   - repetir un lead sin fecha previa y confirmar que el nuevo movimiento tenga fecha del registro;
   - repetir un lead con fecha previa y confirmar que la fecha se conserve;
   - validar que el ejecutivo vea el lead en calendario CRM.
+
+### 2026-09-26 - Header de imagen para plantilla WhatsApp de actualizacion de seguimiento
+- Objetivo: permitir que `POST /api/whatsapp/send_notification` envie la plantilla `notify_actualizacion_seguimiento`, aprobada en Meta con encabezado tipo `IMAGE`.
+- Diagnostico confirmado:
+  - Meta rechazaba el envio con codigo `132012`;
+  - el detalle de Meta indicaba `header: Format mismatch, expected IMAGE, received UNKNOWN`;
+  - el endpoint solo armaba headers de plantilla como texto mediante `headers`, por lo que no podia cumplir el contrato de una plantilla con header de imagen.
+- Cambios aplicados:
+  - `controllers/whatsapp.js` normaliza `header_image_url`;
+  - `notify_actualizacion_seguimiento` exige `components` y `header_image_url`;
+  - cuando `header_image_url` existe, el endpoint agrega un componente `header` con parametro `image.link`;
+  - se evita agregar simultaneamente un header textual cuando existe `header_image_url`.
+- Compatibilidad preservada:
+  - el contrato anterior para plantillas sin header media se mantiene;
+  - las plantillas que usan `headers` de texto siguen funcionando igual;
+  - el cambio se limita al armado del payload antes de llamar a Meta.
+- Validacion ejecutada:
+  - `node --check controllers/whatsapp.js`;
+  - `git diff --check`.
+- Validacion pendiente:
+  - probar desde Postman con una URL publica de imagen accesible por Meta;
+  - confirmar respuesta `200` y registro en `whatsapp_requests`;
+  - confirmar en Meta que la imagen del header se renderice correctamente.

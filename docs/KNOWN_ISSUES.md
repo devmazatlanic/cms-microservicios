@@ -9,6 +9,7 @@ El historial de cambios aplicados se conserva en `MAINTENANCE_LOG.md`.
 - 2026-08-16: se implemento el registro de `POST /api/web/events/contactus` en `tcr_seguimientos`, con modo de contacto dinamico, modo `6` por defecto, reutilizacion del hilo activo y notificacion al Director Comercial. Falta validar contra la base real, el inbox, correo y Meta.
 - 2026-09-19: se agrego ruteo configurable de WhatsApp para leads externos mediante `crm_lead_notification_routes`, con fallback al Director Comercial. Falta validar con registros reales por `tipo`, destinatarios activos y plantilla aprobada en Meta.
 - 2026-09-21: se corrigio el alta de leads externos para asignar `fecha_estimada` con la fecha de registro cuando no exista una fecha previa. Falta validar visibilidad en reportes y calendarios del CRM.
+- 2026-09-26: se agrego soporte `header_image_url` para enviar `notify_actualizacion_seguimiento` con header tipo `IMAGE`. Falta validar envio real desde Postman contra Meta con una URL publica de imagen.
 
 ## Prioridad Alta
 - Secretos sensibles detectados en codigo o repositorio:
@@ -34,6 +35,7 @@ El historial de cambios aplicados se conserva en `MAINTENANCE_LOG.md`.
 - Pendiente de validacion: pueden existir relaciones historicas legacy con `status_alta = 1` repetidas para una misma pantalla. Las nuevas altas, ediciones y reactivaciones ya aplican reemplazo exclusivo, y el consumidor Node usa la relacion activa mas reciente como respaldo; falta auditar y normalizar los datos existentes.
 - La alerta de desconexion AirPlay mantiene sus temporizadores en memoria; si Node se reinicia durante los 60 segundos de gracia, ese aviso no se recupera.
 - El nombre de la plantilla se consulta dinamicamente desde `cat_whatsapp_types_details.name`, pero la alerta mantiene un contrato de tres parametros y el idioma `es` en codigo; cambiar cantidad, orden o idioma requiere validacion adicional.
+- `POST /api/whatsapp/send_notification` ya soporta header de imagen para `notify_actualizacion_seguimiento`, pero el resto de plantillas con header media requeriran soporte explicito si se agregan en Meta.
 - La deduplicacion del endpoint de leads usa correo o telefono y considera variantes mexicanas del telefono, pero no existe una llave de idempotencia para solicitudes simultaneas; dos peticiones concurrentes podrian abrir hilos duplicados.
 - Si no existe un Director Comercial activo (`usu_idPuesto = 5`), el lead se persiste sin responsable y la notificacion queda omitida; falta confirmar que el inbox lo muestre para los perfiles administradores.
 - La notificacion de leads ya puede usar rutas configuradas por `id_modo_contacto`, pero el contrato de mensaje conserva tres parametros y la plantilla fallback `notify_operativo_general`; cambiar cantidad, orden o idioma requiere validacion adicional.

@@ -37,6 +37,7 @@ const normalizeSendNotificationBody = (body) => {
         link: normalizeTextValue(safeBody.link),
         filename: normalizeTextValue(safeBody.filename),
         caption: normalizeTextValue(safeBody.caption),
+        header_image_url: normalizeTextValue(safeBody.header_image_url),
         headers: normalizeTextArray(safeBody.headers),
         components: normalizeTextArray(safeBody.components)
     };
@@ -222,6 +223,14 @@ const send_notification = async (request, response) => {
                             });
                         }
                         break;
+                    case 'notify_actualizacion_seguimiento':
+                        if (body.components.length === 0 || !body.header_image_url) {
+                            return response.status(400).json({
+                                next: false,
+                                message: 'El campo components y header_image_url es obligatorio para esta plantilla.'
+                            });
+                        }
+                        break;
                     case 'notify_solicitud_autorizacion':
                         if (body.components.length < 2) {
                             return response.status(400).json({
@@ -265,7 +274,19 @@ const send_notification = async (request, response) => {
                 }
 
                 _config.components = [];
-                if (body.headers.length > 0) {
+                if (body.header_image_url.length > 0) {
+                    _config.components.push({
+                        type: 'header',
+                        parameters: [
+                            {
+                                type: 'image',
+                                image: {
+                                    link: body.header_image_url
+                                }
+                            }
+                        ]
+                    });
+                } else if (body.headers.length > 0) {
                     _config.components.push(buildComponent("header", body.headers));
                 }
 

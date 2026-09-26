@@ -43,6 +43,7 @@ Exponer microservicios de apoyo para operaciones ligadas a CRM/eventos, particul
 
 ## Contexto adicional confirmado
 - `/api/whatsapp/send_notification` es un endpoint de uso interno.
+- `POST /api/whatsapp/send_notification` soporta plantillas con parametros de cuerpo y, para `notify_actualizacion_seguimiento`, un encabezado de imagen mediante `header_image_url`.
 - `whatsapp_requests` se usa como bitacora principal de mensajes WhatsApp, incluyendo mensajes salientes, entrantes y sincronizacion basica de `message_status`.
 - El modulo de WhatsApp tiene proyeccion futura hacia automatizacion conversacional o bot.
 - El modulo de WhatsApp ya cuenta con un flujo inicial de menu/bot para mensajes sin contexto y respuestas basicas de ayuda operativa.

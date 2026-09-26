@@ -68,6 +68,7 @@ Arquitectura tipo MVC ligera con responsabilidades separadas por carpeta, pero s
 - La bitacora principal visible es `whatsapp_requests`.
 - El webhook ya procesa `messages` y `statuses`, recorriendo todos los `entry` y `changes` visibles en el payload y sincronizando `message_status` en la bitacora local.
 - Los mensajes entrantes con y sin contexto util ya se registran y existe un menu/bot textual inicial para orientar mensajes libres sin inventar flujos de negocio adicionales.
+- El endpoint interno `POST /api/whatsapp/send_notification` arma plantillas Meta desde arreglos de texto para el cuerpo. La plantilla `notify_actualizacion_seguimiento` requiere `header_image_url` porque su encabezado aprobado en Meta es tipo `IMAGE`.
 
 ## Nota sobre leads externos e Inbox CRM
 - `POST /api/web/events/contactus` es el punto de entrada para formularios externos y conserva el contrato de respuesta historico (`next` y `message`).
