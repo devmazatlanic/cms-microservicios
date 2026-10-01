@@ -317,6 +317,7 @@ const send_notification = async (request, response) => {
                             });
                         }
                         break;
+                    case 'notify_solicitud_factura_prefactura':
                     case 'notify_solicitud_factura_personalvariable':
                         if (body.filename && body.url.length > 0) {
                             _config.components.push({
