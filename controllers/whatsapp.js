@@ -225,7 +225,7 @@ const send_notification = async (request, response) => {
                         break;
                     case 'notify_actualizacion_seguimiento':
                     case 'notify_solicitud_factura_prefactura':
-                        body.header_image_url = "http://cdn.mztmic.com:8000/plantillas_whatsapp/header/mazatlanic-seguimientos.png";
+                        // body.header_image_url = "http://cdn.mztmic.com:8000/plantillas_whatsapp/header/mazatlanic-seguimientos.png";
                         if (body.components.length === 0 || !body.header_image_url) {
                             return response.status(400).json({
                                 next: false,
@@ -303,6 +303,7 @@ const send_notification = async (request, response) => {
                     case 'notify_solicitud_personal_autorizacion':
                     case 'notify_solicitud_personalvariable_autorizacion':
                     case 'notify_pronostico_flujo_personal':
+                    case 'notify_solicitud_factura_prefactura':
                         if (body.link.length > 0) {
                             _config.components.push({
                                 type: 'button',
@@ -317,7 +318,6 @@ const send_notification = async (request, response) => {
                             });
                         }
                         break;
-                    case 'notify_solicitud_factura_prefactura':
                     case 'notify_solicitud_factura_personalvariable':
                         if (body.filename && body.url.length > 0) {
                             _config.components.push({
